@@ -25,6 +25,7 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def init_db() -> None:
+    import app.models.chunk  # noqa: F401
     import app.models.knowledge_base  # noqa: F401
     import app.models.knowledge_item  # noqa: F401
 

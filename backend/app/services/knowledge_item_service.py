@@ -9,6 +9,8 @@ from app.schemas.knowledge_item import (
     KnowledgeItemStatusUpdate,
     KnowledgeItemUpdate,
 )
+from app.schemas.parse import ParseResult
+from app.services.chunk_service import ChunkService
 from app.services.knowledge_base_service import KnowledgeBaseNotFoundError, KnowledgeBaseService
 
 
@@ -93,13 +95,20 @@ class KnowledgeItemService:
         return KnowledgeItemStatus.PENDING.value
 
     @staticmethod
-    def _apply_ready_metadata(item: KnowledgeItem) -> None:
+    def _finalize_ready(
+        db: Session,
+        item: KnowledgeItem,
+        *,
+        parse_result: ParseResult | None = None,
+    ) -> None:
         if item.content and not item.summary:
             item.summary = item.content.strip()[:200]
-        if item.content:
-            item.chunk_count = max(1, len(item.content) // 500)
         item.processing_progress = 100
         item.error_message = None
+        if item.content and item.content.strip():
+            ChunkService.apply_to_item(db, item, parse_result)
+        else:
+            item.chunk_count = 0
 
     @staticmethod
     def create_item(
@@ -127,7 +136,12 @@ class KnowledgeItemService:
         )
 
         if initial_status == KnowledgeItemStatus.READY.value:
-            KnowledgeItemService._apply_ready_metadata(item)
+            db.add(item)
+            db.flush()
+            KnowledgeItemService._finalize_ready(db, item)
+            db.commit()
+            db.refresh(item)
+            return item
 
         db.add(item)
         db.commit()
@@ -155,13 +169,14 @@ class KnowledgeItemService:
             item.tags = data["tags"]
         if "status" in data and data["status"] is not None:
             KnowledgeItemService._transition_status(
+                db,
                 item,
                 data["status"],
                 error_message=None,
             )
 
-        if item.status == KnowledgeItemStatus.READY.value and item.content:
-            KnowledgeItemService._apply_ready_metadata(item)
+        if item.status == KnowledgeItemStatus.READY.value and "content" in data and item.content:
+            KnowledgeItemService._finalize_ready(db, item)
 
         db.commit()
         db.refresh(item)
@@ -175,6 +190,7 @@ class KnowledgeItemService:
 
     @staticmethod
     def _transition_status(
+        db: Session,
         item: KnowledgeItem,
         target: KnowledgeItemStatus,
         *,
@@ -193,7 +209,8 @@ class KnowledgeItemService:
             item.processing_progress = 10
             item.error_message = None
         elif target == KnowledgeItemStatus.READY:
-            KnowledgeItemService._apply_ready_metadata(item)
+            item.processing_progress = 100
+            item.error_message = None
         elif target == KnowledgeItemStatus.PENDING:
             item.processing_progress = 0
             item.error_message = None
@@ -206,6 +223,7 @@ class KnowledgeItemService:
     ) -> KnowledgeItem:
         item = KnowledgeItemService.get_item(db, item_id)
         KnowledgeItemService._transition_status(
+            db,
             item,
             payload.status,
             error_message=payload.error_message,
@@ -255,7 +273,7 @@ class KnowledgeItemService:
 
         if item.content:
             item.status = KnowledgeItemStatus.READY.value
-            KnowledgeItemService._apply_ready_metadata(item)
+            KnowledgeItemService._finalize_ready(db, item)
         else:
             item.status = KnowledgeItemStatus.FAILED.value
             item.error_message = "条目无正文，请先录入内容或上传文档"

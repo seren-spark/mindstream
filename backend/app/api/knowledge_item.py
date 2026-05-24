@@ -14,6 +14,8 @@ from app.schemas.knowledge_item import (
 )
 from app.schemas.parse import ParseItemResponse
 from app.schemas.upload import ParseStatus
+from app.schemas.chunk import ChunkResponse
+from app.services.chunk_service import ChunkService
 from app.services.knowledge_base_service import KnowledgeBaseNotFoundError
 from app.services.knowledge_item_service import (
     InvalidStatusTransitionError,
@@ -165,6 +167,20 @@ def parse_knowledge_item(
         item_status=item.status,
         error_message=item.error_message,
     )
+
+
+@router.get("/knowledge-items/{item_id}/chunks", response_model=list[ChunkResponse])
+def list_knowledge_item_chunks(
+    item_id: int,
+    db: Session = Depends(get_db),
+) -> list[ChunkResponse]:
+    try:
+        KnowledgeItemService.get_item(db, item_id)
+    except KnowledgeItemNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    rows = ChunkService.list_chunks(db, item_id)
+    return [ChunkService.to_response(row) for row in rows]
 
 
 @router.delete("/knowledge-items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)

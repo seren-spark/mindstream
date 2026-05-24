@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = 20
     allowed_upload_extensions: str = ".pdf,.docx,.doc,.md,.markdown,.txt"
 
+    chunk_size: int = 400
+    chunk_overlap: int = 60
+    chunk_min_size: int = 80
+
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     @property

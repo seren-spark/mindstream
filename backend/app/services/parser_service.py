@@ -90,7 +90,7 @@ class ParserService:
             if result.title:
                 item.title = result.title
             item.status = KnowledgeItemStatus.READY.value
-            KnowledgeItemService._apply_ready_metadata(item)
+            KnowledgeItemService._finalize_ready(db, item, parse_result=result)
             db.commit()
             db.refresh(item)
             return ParseStatus.COMPLETED, None
