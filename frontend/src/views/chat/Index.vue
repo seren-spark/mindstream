@@ -119,7 +119,12 @@ function handleScrollFab() {
         <Transition name="ui-fade" mode="out-in">
           <ChatEmptyState v-if="!messages.length" key="empty" @pick="onPickSuggestion" />
           <TransitionGroup v-else key="list" name="chat-msg" tag="div" class="chat-page__list">
-            <ChatMessageItem v-for="msg in messages" :key="msg.id" :message="msg" />
+            <ChatMessageItem
+              v-for="msg in messages"
+              :key="msg.id"
+              :message="msg"
+              :knowledge-base-id="knowledgeBaseId"
+            />
           </TransitionGroup>
         </Transition>
       </div>

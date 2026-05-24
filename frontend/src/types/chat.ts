@@ -8,6 +8,10 @@ export interface CitationRef {
   knowledge_item_id: number
   source_name: string
   display_title: string
+  source_type?: string
+  file_name?: string | null
+  category?: string | null
+  updated_at?: string | null
   highlight_text: string
   content_excerpt: string
   score: number

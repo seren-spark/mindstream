@@ -15,6 +15,10 @@ class RetrievalHit(BaseModel):
     source_location: SourceLocation
     knowledge_item_id: int
     knowledge_base_id: int
+    source_type: str = "manual"
+    file_name: str | None = None
+    category: str | None = None
+    updated_at: str | None = None
     highlight_text: str = ""
     order_index: int = 0
     recall_sources: list[str] = Field(default_factory=list)

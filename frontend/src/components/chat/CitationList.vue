@@ -1,170 +1,130 @@
 <script setup lang="ts">
-import { IconBook } from '@arco-design/web-vue/es/icon'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { IconInfoCircle } from '@arco-design/web-vue/es/icon'
+import CitationRefRow from '@/components/chat/CitationRefRow.vue'
 import type { CitationRef } from '@/types/chat'
+import { ROUTE_NAMES } from '@/utils/constants'
 
-defineProps<{
+const props = defineProps<{
   citations: CitationRef[]
+  knowledgeBaseId: number
 }>()
 
-function locationLabel(cite: CitationRef): string {
-  const loc = cite.source_location
-  const parts: string[] = []
-  if (loc.page_start != null) {
-    parts.push(
-      loc.page_end != null && loc.page_end !== loc.page_start
-        ? `第 ${loc.page_start}-${loc.page_end} 页`
-        : `第 ${loc.page_start} 页`,
-    )
-  }
-  if (loc.section_title) parts.push(loc.section_title)
-  return parts.join(' · ')
+const emit = defineEmits<{
+  highlight: [index: number | null]
+}>()
+
+const router = useRouter()
+const activeIndex = ref<number | null>(null)
+const expanded = ref(true)
+
+function setHighlight(index: number | null) {
+  activeIndex.value = index
+  emit('highlight', index)
 }
+
+function scrollToCitation(index: number) {
+  setHighlight(index)
+  const el = document.getElementById(`cite-${index}`)
+  el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  el?.classList.add('cite-row--flash')
+  window.setTimeout(() => el?.classList.remove('cite-row--flash'), 1200)
+}
+
+function openCitation(cite: CitationRef) {
+  activeIndex.value = cite.index
+  router.push({
+    name: ROUTE_NAMES.KNOWLEDGE_ITEMS,
+    params: {
+      id: String(props.knowledgeBaseId),
+      itemId: String(cite.knowledge_item_id),
+    },
+    query: {
+      chunk: cite.chunk_id,
+      page: cite.source_location.page_start ?? undefined,
+    },
+  })
+}
+
+defineExpose({ scrollToCitation, activeIndex })
 </script>
 
 <template>
   <Transition name="chat-cite">
-    <div v-if="citations.length" class="citation-list">
-      <a-collapse :default-active-key="[]" :bordered="false">
-        <a-collapse-item key="refs" :header="`引用来源 (${citations.length})`">
-          <div class="citation-list__items">
-            <div
-              v-for="(cite, i) in citations"
-              :id="`cite-${cite.index}`"
-              :key="cite.chunk_id"
-              class="citation-card"
-              :style="{ animationDelay: `${i * 0.06}s` }"
-            >
-              <div class="citation-card__head">
-                <span class="citation-card__index">[{{ cite.index }}]</span>
-                <IconBook class="citation-card__icon" />
-                <span class="citation-card__title">
-                  {{ cite.display_title || cite.source_name }}
-                </span>
-              </div>
-              <p v-if="locationLabel(cite)" class="citation-card__meta">
-                {{ locationLabel(cite) }}
-              </p>
-              <p class="citation-card__excerpt">
-                {{ cite.highlight_text || cite.content_excerpt }}
-              </p>
-            </div>
-          </div>
-        </a-collapse-item>
-      </a-collapse>
-    </div>
+    <section v-if="citations.length" class="citation-panel">
+      <header class="citation-panel__header" @click="expanded = !expanded">
+        <span class="citation-panel__title"> 为你找到 {{ citations.length }} 篇参考资料 </span>
+        <IconInfoCircle class="citation-panel__info" />
+        <span class="citation-panel__toggle">{{ expanded ? '收起' : '展开' }}</span>
+      </header>
+
+      <Transition name="ui-fade">
+        <div v-show="expanded" class="citation-panel__list">
+          <CitationRefRow
+            v-for="cite in citations"
+            :key="cite.chunk_id"
+            :cite="cite"
+            :active="activeIndex === cite.index"
+            @click="openCitation"
+            @hover="setHighlight"
+          />
+        </div>
+      </Transition>
+    </section>
   </Transition>
 </template>
 
 <style scoped>
-.citation-list {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--color-border-2);
+.citation-panel {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border-2);
 }
 
-.citation-list :deep(.arco-collapse-item-header) {
-  padding: 0 0 10px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-3);
-  background: transparent;
-  transition: color var(--chat-duration-fast) ease;
-}
-
-.citation-list :deep(.arco-collapse-item-header:hover) {
-  color: rgb(var(--primary-6));
-}
-
-.citation-list :deep(.arco-collapse-item-content) {
-  padding: 0;
-  background: transparent;
-}
-
-.citation-list :deep(.arco-collapse-item-content-box) {
-  transition: height var(--chat-duration) var(--chat-ease) !important;
-}
-
-.citation-list__items {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.citation-card {
-  padding: 11px 14px;
-  background: var(--color-fill-1);
-  border: 1px solid var(--color-border-2);
-  border-radius: 10px;
-  opacity: 0;
-  animation: cite-card-in var(--chat-duration) var(--chat-ease-out) forwards;
-  transition:
-    border-color var(--chat-duration) var(--chat-ease),
-    background var(--chat-duration) var(--chat-ease),
-    transform var(--chat-duration-fast) var(--chat-ease),
-    box-shadow var(--chat-duration) var(--chat-ease);
-}
-
-@keyframes cite-card-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.citation-card:hover {
-  border-color: rgb(var(--primary-4));
-  background: var(--color-bg-2);
-  transform: translateX(2px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-}
-
-.citation-card__head {
+.citation-panel__header {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  user-select: none;
 }
 
-.citation-card__index {
-  flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: rgb(var(--primary-6));
-}
-
-.citation-card__icon {
-  flex-shrink: 0;
+.citation-panel__title {
   font-size: 14px;
-  color: var(--color-text-3);
-}
-
-.citation-card__title {
-  font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-text-1);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.citation-card__meta {
-  margin: 0 0 6px;
-  font-size: 12px;
+.citation-panel__info {
+  font-size: 14px;
   color: var(--color-text-4);
 }
 
-.citation-card__excerpt {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.55;
-  color: var(--color-text-2);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.citation-panel__toggle {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+
+.citation-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+:deep(.cite-row--flash) {
+  animation: cite-flash 1.2s var(--ui-ease);
+}
+
+@keyframes cite-flash {
+  0%,
+  100% {
+    background: var(--color-fill-2);
+  }
+  30% {
+    background: rgb(var(--primary-1));
+  }
 }
 </style>

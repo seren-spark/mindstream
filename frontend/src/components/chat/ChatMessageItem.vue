@@ -1,12 +1,61 @@
 <script setup lang="ts">
+import { computed, nextTick, ref, watch } from 'vue'
 import { MarkdownRender } from 'markstream-vue'
 import { IconRobot, IconUser } from '@arco-design/web-vue/es/icon'
 import CitationList from '@/components/chat/CitationList.vue'
 import type { ChatMessage } from '@/types/chat'
+import { linkifyCitationMarkers } from '@/utils/citation'
 
-defineProps<{
+const props = defineProps<{
   message: ChatMessage
+  knowledgeBaseId?: number
 }>()
+
+const citationListRef = ref<InstanceType<typeof CitationList> | null>(null)
+const contentRef = ref<HTMLElement | null>(null)
+const activeCitationIndex = ref<number | null>(null)
+
+const renderedContent = computed(() => {
+  if (props.message.role !== 'assistant' || !props.message.content) return ''
+  const linked =
+    props.message.status !== 'streaming' && props.message.citations?.length
+      ? linkifyCitationMarkers(props.message.content, props.message.citations)
+      : props.message.content
+  return linked
+})
+
+const showCitations = computed(
+  () =>
+    !!props.message.citations?.length &&
+    props.message.status !== 'streaming' &&
+    !!props.knowledgeBaseId,
+)
+
+watch(activeCitationIndex, async () => {
+  await nextTick()
+  const root = contentRef.value
+  if (!root) return
+  root.querySelectorAll('a[href^="#cite-"]').forEach((el) => el.classList.remove('cite-ref-active'))
+  if (activeCitationIndex.value == null) return
+  root
+    .querySelector(`a[href="#cite-${activeCitationIndex.value}"]`)
+    ?.classList.add('cite-ref-active')
+})
+
+function onMarkdownClick(event: MouseEvent) {
+  const target = event.target as HTMLElement
+  const anchor = target.closest('a[href^="#cite-"]') as HTMLAnchorElement | null
+  if (!anchor) return
+  event.preventDefault()
+  const index = Number(anchor.getAttribute('href')?.replace('#cite-', ''))
+  if (Number.isNaN(index)) return
+  activeCitationIndex.value = index
+  citationListRef.value?.scrollToCitation(index)
+}
+
+function onCitationHighlight(index: number | null) {
+  activeCitationIndex.value = index
+}
 </script>
 
 <template>
@@ -31,13 +80,20 @@ defineProps<{
             <span>正在检索并生成…</span>
           </div>
 
-          <div v-else-if="message.content" key="content" class="msg-bubble__content">
+          <div
+            v-else-if="message.content"
+            ref="contentRef"
+            key="content"
+            class="msg-bubble__content"
+            @click="onMarkdownClick"
+          >
             <MarkdownRender
-              :content="message.content"
+              :content="renderedContent"
               :max-live-nodes="0"
               :batch-rendering="true"
               :typewriter="message.status === 'streaming'"
               class="msg-bubble__markdown markstream-vue"
+              :class="{ 'msg-bubble__markdown--linked': showCitations }"
             />
             <span
               v-if="message.status === 'streaming'"
@@ -58,8 +114,11 @@ defineProps<{
         </Transition>
 
         <CitationList
-          v-if="message.citations?.length && message.status !== 'streaming'"
-          :citations="message.citations"
+          v-if="showCitations"
+          ref="citationListRef"
+          :citations="message.citations!"
+          :knowledge-base-id="knowledgeBaseId!"
+          @highlight="onCitationHighlight"
         />
       </div>
     </div>
@@ -91,7 +150,7 @@ defineProps<{
   height: 34px;
   border-radius: 50%;
   font-size: 16px;
-  transition: transform var(--chat-duration) var(--chat-ease);
+  transition: transform var(--ui-duration) var(--ui-ease);
 }
 
 .msg-row:hover .msg-row__avatar {
@@ -167,7 +226,7 @@ defineProps<{
   border-radius: 50%;
   background: rgb(var(--primary-6));
   opacity: 0.45;
-  animation: dot-wave 1.4s var(--chat-ease) infinite;
+  animation: dot-wave 1.4s var(--ui-ease) infinite;
 }
 
 .msg-bubble__dots span:nth-child(2) {
@@ -208,11 +267,36 @@ defineProps<{
 .msg-bubble__markdown :deep(pre) {
   border-radius: 10px;
   font-size: 13px;
-  transition: box-shadow var(--chat-duration-fast) ease;
 }
 
-.msg-bubble__markdown :deep(a) {
-  transition: color var(--chat-duration-fast) ease;
+/* 正文引用上标：灰色圆角数字，类似飞书/豆包 */
+.msg-bubble__markdown--linked :deep(a[href^='#cite-']) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin: 0 2px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: super;
+  color: var(--color-text-2) !important;
+  text-decoration: none !important;
+  background: var(--color-fill-3);
+  border-radius: 10px;
+  transition:
+    background var(--ui-duration-fast) var(--ui-ease),
+    color var(--ui-duration-fast) var(--ui-ease),
+    transform var(--ui-duration-fast) var(--ui-ease);
+}
+
+.msg-bubble__markdown--linked :deep(a[href^='#cite-']:hover),
+.msg-bubble__markdown--linked :deep(a.cite-ref-active) {
+  color: rgb(var(--primary-6)) !important;
+  background: rgb(var(--primary-1));
+  transform: translateY(-1px);
 }
 
 .msg-bubble__cursor {

@@ -264,16 +264,21 @@ class RetrievalService:
             if chunk_id in keyword_score_map:
                 sources.append("keyword")
 
+            updated = item.updated_at.isoformat() if item.updated_at else None
             hits.append(
                 RetrievalHit(
                     chunk_id=chunk_id,
                     content=chunk.content,
                     score=round(rrf_score, 6),
-                    source_name=item.title,
+                    source_name=item.file_name or item.title,
                     display_title=build_display_title(item.title, loc),
                     source_location=loc,
                     knowledge_item_id=item.id,
                     knowledge_base_id=chunk.knowledge_base_id,
+                    source_type=item.source_type,
+                    file_name=item.file_name,
+                    category=item.category,
+                    updated_at=updated,
                     highlight_text=build_highlight(chunk.content, query_text),
                     order_index=chunk.order_index,
                     recall_sources=sources,

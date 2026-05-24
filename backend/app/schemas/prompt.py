@@ -26,6 +26,10 @@ class CitationRef(BaseModel):
     knowledge_item_id: int
     source_name: str
     display_title: str
+    source_type: str = "manual"
+    file_name: str | None = None
+    category: str | None = None
+    updated_at: str | None = None
     highlight_text: str = ""
     source_location: SourceLocation
     score: float = 0.0
