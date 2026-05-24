@@ -13,10 +13,17 @@ defineProps<{
 
 const router = useRouter()
 
-function goUpload(record: UnansweredItem) {
+function goAll(kbId?: number) {
   router.push({
-    name: ROUTE_NAMES.KNOWLEDGE_UPLOAD,
-    params: { id: record.knowledge_base_id },
+    name: ROUTE_NAMES.KNOWLEDGE_GAPS,
+    query: kbId ? { kbId: String(kbId) } : undefined,
+  })
+}
+
+function goResolve(record: UnansweredItem) {
+  router.push({
+    name: ROUTE_NAMES.KNOWLEDGE_GAPS,
+    query: { kbId: String(record.knowledge_base_id) },
   })
 }
 </script>
@@ -28,6 +35,9 @@ function goUpload(record: UnansweredItem) {
         <span>未命中问题 · 待补知识</span>
         <span class="chart-head__hint">检索无有效依据，共 {{ total }} 次未命中</span>
       </div>
+    </template>
+    <template #extra>
+      <a-button type="text" size="small" @click="goAll()">查看全部</a-button>
     </template>
 
     <a-spin :loading="loading" style="width: 100%">
@@ -43,9 +53,9 @@ function goUpload(record: UnansweredItem) {
               {{ formatDateTime(record.last_asked_at) }}
             </template>
           </a-table-column>
-          <a-table-column title="操作" :width="100" align="center">
+          <a-table-column title="操作" :width="120" align="center">
             <template #cell="{ record }">
-              <a-button type="text" size="small" @click="goUpload(record)">补文档</a-button>
+              <a-button type="text" size="small" @click="goResolve(record)">去沉淀</a-button>
             </template>
           </a-table-column>
         </template>

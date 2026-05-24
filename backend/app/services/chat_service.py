@@ -17,6 +17,7 @@ from app.services.knowledge_base_service import KnowledgeBaseNotFoundError, Know
 from app.services.llm_service import LlmService
 from app.services.prompt_builder_service import PromptBuilderService
 from app.services.retrieval_service import RetrievalService
+from app.services.unanswered_service import UnansweredService
 
 
 def format_sse(payload: dict) -> str:
@@ -111,15 +112,28 @@ class ChatService:
             yield format_sse({"type": "references", "citations": citations_payload})
             yield format_sse({"type": "done"})
 
+            assistant_content = "".join(assistant_parts)
+
             if conv:
                 ConversationService.finish_assistant_message(
                     db,
                     conv,
                     message_id,
-                    content="".join(assistant_parts),
+                    content=assistant_content,
                     status="done",
                     citations=citations_payload,
                 )
+
+            UnansweredService.record_from_chat(
+                db,
+                knowledge_base_id=knowledge_base_id,
+                query=payload.query,
+                hits=search.hits,
+                citations=citations_payload,
+                assistant_content=assistant_content,
+                user_message_id=user_message_id if conv else None,
+                assistant_message_id=message_id if conv else None,
+            )
 
         except Exception as exc:
             err = f"问答失败: {exc}"

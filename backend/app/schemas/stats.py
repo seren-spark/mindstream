@@ -48,6 +48,7 @@ class StatsHeatResponse(BaseModel):
 
 
 class UnansweredItem(BaseModel):
+    id: str | None = None
     query_text: str
     occurrence_count: int
     last_asked_at: datetime

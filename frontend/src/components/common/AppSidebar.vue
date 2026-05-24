@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { IconDashboard, IconBook, IconMessage } from '@arco-design/web-vue/es/icon'
+import { IconDashboard, IconBook, IconMessage, IconBulb } from '@arco-design/web-vue/es/icon'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,11 +11,13 @@ const appStore = useAppStore()
 const menuItems = [
   { key: '/dashboard', title: '概览', icon: IconDashboard },
   { key: '/knowledge', title: '知识库', icon: IconBook },
+  { key: '/gaps', title: '知识缺口', icon: IconBulb },
   { key: '/chat', title: '智能问答', icon: IconMessage },
 ]
 
 const selectedKeys = computed(() => {
   if (route.path.startsWith('/knowledge')) return ['/knowledge']
+  if (route.path.startsWith('/gaps')) return ['/gaps']
   return [route.path]
 })
 

@@ -22,8 +22,8 @@ from app.schemas.stats import (
     TrendPoint,
     UnansweredItem,
 )
-
-MISS_PHRASE = "无法找到相关信息"
+from app.services.miss_detection import MISS_PHRASE
+from app.services.unanswered_service import UnansweredService
 
 
 def _period_start(days: int) -> datetime:
@@ -270,6 +270,46 @@ class StatsService:
 
     @staticmethod
     def unanswered(
+        db: Session,
+        *,
+        knowledge_base_id: int | None = None,
+        days: int = 30,
+        limit: int = 20,
+    ) -> StatsUnansweredResponse:
+        rows = UnansweredService.top_for_stats(
+            db, knowledge_base_id=knowledge_base_id, limit=limit, days=days
+        )
+        if rows:
+            kb_names = {
+                kb.id: kb.name for kb in db.scalars(select(KnowledgeBase)).all()
+            }
+            items = [
+                UnansweredItem(
+                    id=r.id,
+                    query_text=r.query_text,
+                    occurrence_count=r.occurrence_count,
+                    last_asked_at=r.last_asked_at,
+                    knowledge_base_id=r.knowledge_base_id,
+                    knowledge_base_name=kb_names.get(r.knowledge_base_id, ""),
+                    sample_message_id=r.sample_user_message_id or r.id,
+                    suggested_action="upload",
+                )
+                for r in rows
+            ]
+            total = sum(r.occurrence_count for r in rows)
+            return StatsUnansweredResponse(
+                period_days=days,
+                knowledge_base_id=knowledge_base_id,
+                total_miss_count=total,
+                items=items,
+            )
+
+        return StatsService._unanswered_from_messages(
+            db, knowledge_base_id=knowledge_base_id, days=days, limit=limit
+        )
+
+    @staticmethod
+    def _unanswered_from_messages(
         db: Session,
         *,
         knowledge_base_id: int | None = None,

@@ -7,4 +7,5 @@ export const ROUTE_NAMES = {
   CHAT: 'Chat',
   AGENT_DETAIL: 'AgentDetail',
   AGENT_CHAT: 'AgentChat',
+  KNOWLEDGE_GAPS: 'KnowledgeGaps',
 } as const

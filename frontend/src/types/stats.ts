@@ -43,6 +43,7 @@ export interface StatsHeat {
 }
 
 export interface UnansweredItem {
+  id?: string | null
   query_text: string
   occurrence_count: number
   last_asked_at: string

@@ -38,6 +38,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '知识库详情', hidden: true },
       },
       {
+        path: 'gaps',
+        name: ROUTE_NAMES.KNOWLEDGE_GAPS,
+        component: () => import('@/views/gaps/Index.vue'),
+        meta: { title: '知识缺口', icon: 'icon-bulb' },
+      },
+      {
         path: 'chat',
         name: ROUTE_NAMES.CHAT,
         component: () => import('@/views/chat/Index.vue'),
