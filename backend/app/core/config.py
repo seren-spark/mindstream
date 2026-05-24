@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     embedding_cache_enabled: bool = True
     embedding_cache_path: str = "./data/embedding_cache.json"
 
+    hybrid_recall_top_k: int = 20
+    hybrid_final_top_k: int = 5
+    rrf_k: int = 60
+
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     @property
