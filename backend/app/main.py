@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.chat import router as chat_router
 from app.api.knowledge_base import router as knowledge_base_router
 from app.api.knowledge_item import router as knowledge_item_router
 from app.api.ping import router as ping_router
@@ -51,6 +52,7 @@ async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse
 
 app.include_router(ping_router, prefix="/api")
 app.include_router(knowledge_base_router, prefix="/api")
+app.include_router(chat_router, prefix="/api")
 app.include_router(knowledge_item_router, prefix="/api")
 app.include_router(prompt_router, prefix="/api")
 app.include_router(retrieval_router, prefix="/api")

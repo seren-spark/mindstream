@@ -40,6 +40,13 @@ class Settings(BaseSettings):
     rag_max_context_chars: int = 6000
     rag_chunk_max_chars: int = 800
 
+    llm_mode: str = "mock"
+    openai_api_key: str | None = None
+    openai_base_url: str = "https://api.openai.com/v1"
+    openai_model: str = "gpt-4o-mini"
+    llm_stream_delay_ms: float = 25.0
+    llm_stream_chunk_chars: int = 2
+
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     @property
