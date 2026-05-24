@@ -37,6 +37,7 @@ export interface ChatMessage {
 export interface ChatStreamRequest {
   query: string
   history?: PromptChatMessage[]
+  conversation_id?: string
   top_k?: number
 }
 

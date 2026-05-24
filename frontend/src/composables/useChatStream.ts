@@ -6,6 +6,15 @@ function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
+export interface SendChatOptions {
+  knowledgeBaseId: number
+  query: string
+  messages: ChatMessage[]
+  conversationId?: string | null
+  onUpdate: (messages: ChatMessage[]) => void
+  onDone?: () => void | Promise<void>
+}
+
 export function useChatStream() {
   const streaming = ref(false)
   const abortController = ref<AbortController | null>(null)
@@ -16,12 +25,8 @@ export function useChatStream() {
     streaming.value = false
   }
 
-  async function send(
-    knowledgeBaseId: number,
-    query: string,
-    messages: ChatMessage[],
-    onUpdate: (messages: ChatMessage[]) => void,
-  ) {
+  async function send(options: SendChatOptions) {
+    const { knowledgeBaseId, query, messages, conversationId, onUpdate, onDone } = options
     if (!knowledgeBaseId || !query.trim()) return
 
     const userMsg: ChatMessage = {
@@ -49,6 +54,7 @@ export function useChatStream() {
     const payload: ChatStreamRequest = {
       query: query.trim(),
       history: history as ChatStreamRequest['history'],
+      conversation_id: conversationId ?? undefined,
       top_k: 5,
     }
 
@@ -62,6 +68,15 @@ export function useChatStream() {
         knowledgeBaseId,
         payload,
         {
+          onStart(messageId) {
+            const updated = [...next]
+            const current = updated[assistantIndex]
+            if (current) {
+              updated[assistantIndex] = { ...current, id: messageId }
+              onUpdate(updated)
+              next[assistantIndex] = updated[assistantIndex]
+            }
+          },
           onToken(delta) {
             const updated = [...next]
             const current = updated[assistantIndex]
@@ -113,6 +128,7 @@ export function useChatStream() {
         updated[assistantIndex] = { ...current, status: 'done' }
         onUpdate(updated)
       }
+      await onDone?.()
     } catch (err) {
       const isAbort = err instanceof DOMException && err.name === 'AbortError'
       const updated = [...next]
@@ -125,6 +141,7 @@ export function useChatStream() {
         }
         onUpdate(updated)
       }
+      if (!isAbort) await onDone?.()
     } finally {
       streaming.value = false
       abortController.value = null

@@ -26,8 +26,10 @@ def get_db() -> Generator[Session, None, None]:
 
 def init_db() -> None:
     import app.models.chunk  # noqa: F401
+    import app.models.conversation  # noqa: F401
     import app.models.knowledge_base  # noqa: F401
     import app.models.knowledge_item  # noqa: F401
+    import app.models.message  # noqa: F401
 
     db_path = settings.database_url.replace("sqlite:///", "")
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
