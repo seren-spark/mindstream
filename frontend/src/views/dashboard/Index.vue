@@ -1,69 +1,71 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import PageContainer from '@/components/common/PageContainer.vue'
+import DashboardFilterBar from '@/components/dashboard/DashboardFilterBar.vue'
+import StatOverviewCards from '@/components/dashboard/StatOverviewCards.vue'
+import QuestionTrendChart from '@/components/dashboard/QuestionTrendChart.vue'
+import KnowledgeHeatRank from '@/components/dashboard/KnowledgeHeatRank.vue'
+import UnansweredTable from '@/components/dashboard/UnansweredTable.vue'
+import { useDashboardStats } from '@/composables/useDashboardStats'
 import { useAppStore } from '@/stores/app'
 
 const appStore = useAppStore()
+const { kbId, days, overview, trend, heat, unanswered, loading, errors, refresh } =
+  useDashboardStats()
 
 onMounted(() => {
   appStore.checkBackendHealth()
+  refresh()
 })
+
+watch([kbId, days], () => refresh())
 </script>
 
 <template>
   <PageContainer title="概览">
-    <a-row :gutter="[16, 16]">
-      <a-col :xs="24" :sm="8">
-        <a-card class="dash-card" title="后端状态" :bordered="false">
-          <a-result
-            v-if="appStore.backendOnline"
-            status="success"
-            title="联调正常"
-            subtitle="前后端通信链路已打通"
-          />
-          <a-result
-            v-else
-            status="error"
-            title="后端未连接"
-            subtitle="请确认 FastAPI 服务已启动在 8000 端口"
-          />
-        </a-card>
+    <a-alert
+      v-if="!appStore.backendOnline"
+      type="warning"
+      style="margin-bottom: 16px"
+      title="后端未连接"
+      closable
+    >
+      统计依赖后端 API，请确认 FastAPI 已启动。
+    </a-alert>
+
+    <DashboardFilterBar v-model:kb-id="kbId" v-model:days="days" @refresh="refresh" />
+
+    <StatOverviewCards :data="overview" :loading="loading.overview" />
+
+    <a-row :gutter="16">
+      <a-col :xs="24" :lg="15">
+        <QuestionTrendChart
+          :points="trend?.points ?? []"
+          :loading="loading.trend"
+          :error="errors.trend"
+          :period-days="days"
+        />
       </a-col>
-      <a-col :xs="24" :sm="8">
-        <a-card class="dash-card" title="知识文档" :bordered="false">
-          <a-statistic title="总数" :value="0" />
-        </a-card>
-      </a-col>
-      <a-col :xs="24" :sm="8">
-        <a-card class="dash-card" title="问答会话" :bordered="false">
-          <a-statistic title="总数" :value="0" />
-        </a-card>
+      <a-col :xs="24" :lg="9">
+        <KnowledgeHeatRank
+          :items="heat?.items ?? []"
+          :loading="loading.heat"
+          :error="errors.heat"
+        />
       </a-col>
     </a-row>
+
+    <UnansweredTable
+      :items="unanswered?.items ?? []"
+      :total="unanswered?.total_miss_count ?? 0"
+      :loading="loading.unanswered"
+      :error="errors.unanswered"
+    />
   </PageContainer>
 </template>
 
 <style scoped>
-.dash-card {
-  height: 100%;
-  background: var(--color-bg-1);
-  box-shadow: var(--ui-shadow-sm);
-  transition:
-    transform var(--ui-duration) var(--ui-ease),
-    box-shadow var(--ui-duration) var(--ui-ease);
-}
-
-.dash-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--ui-shadow-md);
-}
-
-.dash-card:nth-child(1) {
-  animation-delay: 0.05s;
-}
-
-:deep(.arco-statistic-value) {
-  font-weight: 600;
-  letter-spacing: -0.02em;
+:deep(.page-container__body) {
+  max-width: 1200px;
 }
 </style>

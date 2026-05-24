@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.stats import router as stats_router
 from app.api.agent import router as agent_router
 from app.api.chat import router as chat_router
 from app.api.conversation import router as conversation_router
@@ -57,6 +58,7 @@ app.include_router(knowledge_base_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(conversation_router, prefix="/api")
 app.include_router(agent_router, prefix="/api")
+app.include_router(stats_router, prefix="/api")
 app.include_router(knowledge_item_router, prefix="/api")
 app.include_router(prompt_router, prefix="/api")
 app.include_router(retrieval_router, prefix="/api")
