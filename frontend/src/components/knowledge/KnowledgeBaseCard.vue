@@ -67,13 +67,19 @@ const statusMap = {
 .kb-card {
   height: 100%;
   cursor: pointer;
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border-1) !important;
+  box-shadow: var(--ui-shadow-sm);
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+    transform var(--ui-duration) var(--ui-ease),
+    box-shadow var(--ui-duration) var(--ui-ease),
+    border-color var(--ui-duration-fast) var(--ui-ease) !important;
 }
 
 .kb-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  border-color: rgb(var(--primary-3)) !important;
+  box-shadow: var(--ui-shadow-soft);
 }
 
 .kb-card__header {
@@ -103,13 +109,14 @@ const statusMap = {
 
 .kb-card__more {
   flex-shrink: 0;
+  border-radius: 8px;
 }
 
 .kb-card__desc {
   min-height: 44px;
   margin: 0 0 12px;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--color-text-3);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -135,7 +142,7 @@ const statusMap = {
   align-items: center;
   justify-content: space-between;
   padding-top: 12px;
-  border-top: 1px solid var(--color-border-2);
+  border-top: 1px solid var(--color-border-1);
   font-size: 12px;
   color: var(--color-text-3);
 }

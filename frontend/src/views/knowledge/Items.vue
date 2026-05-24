@@ -166,10 +166,11 @@ onBeforeRouteLeave(async () => {
   display: grid;
   grid-template-columns: 320px 1fr;
   min-height: calc(100vh - 180px);
-  border: 1px solid var(--color-border-2);
-  border-radius: 8px;
+  border: 1px solid var(--color-border-1);
+  border-radius: var(--ui-radius-lg);
   overflow: hidden;
   background: var(--color-bg-1);
+  box-shadow: var(--ui-shadow-sm);
 }
 
 .items-layout__sidebar {

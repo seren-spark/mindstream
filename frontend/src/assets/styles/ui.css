@@ -1,0 +1,189 @@
+/* 全站 UI 动效与设计 token */
+:root {
+  --ui-ease: cubic-bezier(0.33, 1, 0.68, 1);
+  --ui-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ui-ease-soft: cubic-bezier(0.25, 0.8, 0.25, 1);
+  --ui-duration: 0.38s;
+  --ui-duration-fast: 0.22s;
+  --ui-radius-sm: 10px;
+  --ui-radius-md: 14px;
+  --ui-radius-lg: 18px;
+  --ui-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 14px rgba(0, 0, 0, 0.03);
+  --ui-shadow-md: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --ui-shadow-soft: 0 8px 32px rgba(var(--primary-6), 0.06);
+
+  /* 聊天页别名（兼容 chat.css） */
+  --chat-ease: var(--ui-ease);
+  --chat-ease-out: var(--ui-ease-out);
+  --chat-duration: var(--ui-duration);
+  --chat-duration-fast: var(--ui-duration-fast);
+}
+
+/* 路由页面切换 */
+.ui-page-enter-active {
+  transition:
+    opacity var(--ui-duration) var(--ui-ease-out),
+    transform var(--ui-duration) var(--ui-ease-out);
+}
+
+.ui-page-leave-active {
+  transition: opacity calc(var(--ui-duration-fast) * 0.9) ease;
+}
+
+.ui-page-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.ui-page-leave-to {
+  opacity: 0;
+}
+
+/* 区块淡入上浮 */
+.ui-rise-enter-active {
+  transition:
+    opacity var(--ui-duration) var(--ui-ease-out),
+    transform var(--ui-duration) var(--ui-ease-out);
+}
+
+.ui-rise-enter-from {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+/* 列表项错峰 */
+.ui-stagger-enter-active {
+  transition:
+    opacity var(--ui-duration) var(--ui-ease-out),
+    transform var(--ui-duration) var(--ui-ease-out);
+}
+
+.ui-stagger-enter-from {
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+}
+
+.ui-stagger-move {
+  transition: transform var(--ui-duration) var(--ui-ease);
+}
+
+/* 通用淡入淡出 */
+.ui-fade-enter-active,
+.ui-fade-leave-active,
+.chat-fade-enter-active,
+.chat-fade-leave-active {
+  transition: opacity var(--ui-duration) var(--ui-ease-out);
+}
+
+.ui-fade-enter-from,
+.ui-fade-leave-to,
+.chat-fade-enter-from,
+.chat-fade-leave-to {
+  opacity: 0;
+}
+
+/* 聊天消息 */
+.chat-msg-enter-active {
+  transition:
+    opacity var(--ui-duration) var(--ui-ease-out),
+    transform var(--ui-duration) var(--ui-ease-out);
+}
+
+.chat-msg-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.chat-msg-move {
+  transition: transform var(--ui-duration) var(--ui-ease);
+}
+
+.chat-cite-enter-active {
+  transition:
+    opacity var(--ui-duration) var(--ui-ease-out),
+    transform var(--ui-duration) var(--ui-ease-out);
+}
+
+.chat-cite-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+/* Arco 组件柔和化 */
+.arco-card {
+  border-radius: var(--ui-radius-md) !important;
+  transition:
+    box-shadow var(--ui-duration) var(--ui-ease),
+    transform var(--ui-duration) var(--ui-ease),
+    border-color var(--ui-duration-fast) ease !important;
+}
+
+.arco-card-hoverable:hover {
+  box-shadow: var(--ui-shadow-md) !important;
+}
+
+.arco-btn {
+  transition:
+    background var(--ui-duration-fast) var(--ui-ease),
+    border-color var(--ui-duration-fast) var(--ui-ease),
+    color var(--ui-duration-fast) ease,
+    transform var(--ui-duration-fast) var(--ui-ease),
+    box-shadow var(--ui-duration-fast) var(--ui-ease) !important;
+}
+
+.arco-btn:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.arco-input-wrapper,
+.arco-textarea-wrapper,
+.arco-select-view-single {
+  border-radius: var(--ui-radius-sm) !important;
+  transition:
+    border-color var(--ui-duration-fast) var(--ui-ease),
+    box-shadow var(--ui-duration-fast) var(--ui-ease) !important;
+}
+
+.arco-input-wrapper:focus-within,
+.arco-textarea-wrapper:focus-within,
+.arco-select-view-single.arco-select-view-focus {
+  box-shadow: 0 0 0 3px rgba(var(--primary-6), 0.08) !important;
+}
+
+.arco-tabs-nav-tab {
+  transition: color var(--ui-duration-fast) ease !important;
+}
+
+.arco-menu-item {
+  transition:
+    background var(--ui-duration-fast) var(--ui-ease),
+    color var(--ui-duration-fast) ease !important;
+  border-radius: 8px !important;
+  margin: 2px 8px !important;
+  width: calc(100% - 16px) !important;
+}
+
+.arco-layout-sider .arco-menu-inner {
+  padding: 8px 0 !important;
+}
+
+/* 全局滚动条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-fill-4) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--color-fill-4);
+  border-radius: 3px;
+  transition: background var(--ui-duration-fast) ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-4);
+}

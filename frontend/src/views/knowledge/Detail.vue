@@ -86,7 +86,13 @@ function handleDelete() {
       </a-result>
 
       <template v-else-if="store.current">
-        <a-descriptions :column="2" bordered size="large" style="margin-bottom: 20px">
+        <a-descriptions
+          :column="2"
+          bordered
+          size="large"
+          class="detail-desc"
+          style="margin-bottom: 20px"
+        >
           <a-descriptions-item label="名称">{{ store.current.name }}</a-descriptions-item>
           <a-descriptions-item label="状态">
             <a-tag :color="statusMap[store.current.status].color">
@@ -135,6 +141,23 @@ function handleDelete() {
 </template>
 
 <style scoped>
+.detail-desc {
+  border-radius: var(--ui-radius-md);
+  overflow: hidden;
+}
+
+.detail-desc :deep(.arco-descriptions-item-label) {
+  background: var(--color-fill-1);
+}
+
+:deep(.arco-tabs-nav) {
+  margin-bottom: 4px;
+}
+
+:deep(.arco-tabs-content) {
+  padding-top: 16px;
+}
+
 .text-muted {
   color: var(--color-text-3);
 }

@@ -204,7 +204,7 @@ async function handleRetry() {
 <style scoped>
 .item-editor-panel {
   height: 100%;
-  padding: 16px 20px;
+  padding: 20px 24px;
   overflow: auto;
 }
 
@@ -220,6 +220,7 @@ async function handleRetry() {
   margin: 0 0 8px;
   font-size: 18px;
   font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .item-editor-panel__meta {

@@ -37,16 +37,23 @@ async function handleRefreshHealth() {
 
     <div class="app-header__right">
       <a-space>
-        <a-tag :color="appStore.backendOnline ? 'green' : 'red'" class="app-header__status">
-          <template v-if="appStore.healthChecking">检测中...</template>
-          <template v-else-if="appStore.backendOnline">
-            后端已连接 v{{ appStore.backendVersion }}
-          </template>
-          <template v-else>后端未连接</template>
-        </a-tag>
+        <Transition name="ui-fade" mode="out-in">
+          <a-tag
+            :key="appStore.backendOnline ? 'on' : 'off'"
+            :color="appStore.backendOnline ? 'green' : 'red'"
+            class="app-header__status"
+          >
+            <template v-if="appStore.healthChecking">检测中…</template>
+            <template v-else-if="appStore.backendOnline">
+              后端已连接 v{{ appStore.backendVersion }}
+            </template>
+            <template v-else>后端未连接</template>
+          </a-tag>
+        </Transition>
         <a-button
           type="text"
           size="small"
+          class="app-header__refresh"
           :loading="appStore.healthChecking"
           @click="handleRefreshHealth"
         >
@@ -63,9 +70,11 @@ async function handleRefreshHealth() {
   align-items: center;
   justify-content: space-between;
   height: 56px;
-  padding: 0 16px;
-  background: var(--color-bg-2);
-  border-bottom: 1px solid var(--color-border-2);
+  padding: 0 18px;
+  background: color-mix(in srgb, var(--color-bg-2) 88%, transparent);
+  border-bottom: 1px solid var(--color-border-1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .app-header__left {
@@ -77,12 +86,15 @@ async function handleRefreshHealth() {
 
 .app-header__trigger {
   font-size: 18px;
+  border-radius: 8px;
+  transition: background var(--ui-duration-fast) var(--ui-ease);
 }
 
 .app-header__logo {
   font-size: 16px;
   font-weight: 600;
   white-space: nowrap;
+  letter-spacing: -0.02em;
 }
 
 .app-header__breadcrumb {
@@ -95,5 +107,10 @@ async function handleRefreshHealth() {
 
 .app-header__status {
   cursor: default;
+  border-radius: 20px;
+}
+
+.app-header__refresh {
+  border-radius: 8px;
 }
 </style>

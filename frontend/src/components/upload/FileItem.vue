@@ -83,32 +83,44 @@ const emit = defineEmits<{
 .file-item {
   display: flex;
   gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--color-border-2);
-  border-radius: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border-1);
+  border-radius: var(--ui-radius-md);
   background: var(--color-bg-1);
+  box-shadow: var(--ui-shadow-sm);
+  transition:
+    border-color var(--ui-duration-fast) var(--ui-ease),
+    background var(--ui-duration) var(--ui-ease),
+    transform var(--ui-duration) var(--ui-ease),
+    box-shadow var(--ui-duration) var(--ui-ease);
+}
+
+.file-item:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--ui-shadow-md);
 }
 
 .file-item--success {
   border-color: rgb(var(--green-3));
-  background: rgb(var(--green-1));
+  background: color-mix(in srgb, rgb(var(--green-1)) 80%, var(--color-bg-1));
 }
 
 .file-item--error {
   border-color: rgb(var(--red-3));
-  background: rgb(var(--red-1));
+  background: color-mix(in srgb, rgb(var(--red-1)) 80%, var(--color-bg-1));
 }
 
 .file-item__icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ui-radius-sm);
   background: var(--color-fill-2);
   color: rgb(var(--primary-6));
   flex-shrink: 0;
+  transition: background var(--ui-duration-fast) var(--ui-ease);
 }
 
 .file-item__body {

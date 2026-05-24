@@ -23,5 +23,11 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--color-fill-2);
+  background: linear-gradient(
+    165deg,
+    var(--color-fill-2) 0%,
+    var(--color-bg-1) 42%,
+    var(--color-fill-1) 100%
+  );
+  background-attachment: fixed;
 }

@@ -7,6 +7,7 @@ import 'markstream-vue/index.css'
 import App from './App.vue'
 import router from './router'
 import './assets/styles/global.css'
+import './assets/styles/ui.css'
 
 const app = createApp(App)
 

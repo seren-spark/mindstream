@@ -12,9 +12,11 @@ defineProps<{
         <slot name="extra" />
       </div>
     </div>
-    <div class="page-container__body">
-      <slot />
-    </div>
+    <Transition name="ui-rise" appear>
+      <div class="page-container__body">
+        <slot />
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -27,20 +29,25 @@ defineProps<{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  gap: 16px;
 }
 
 .page-container__title {
   margin: 0;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   color: var(--color-text-1);
+  letter-spacing: -0.02em;
 }
 
 .page-container__body {
-  background: var(--color-bg-2);
-  border-radius: 8px;
-  padding: 20px;
-  border: 1px solid var(--color-border-2);
+  background: color-mix(in srgb, var(--color-bg-2) 94%, transparent);
+  border-radius: var(--ui-radius-lg);
+  padding: 22px 24px;
+  border: 1px solid var(--color-border-1);
+  box-shadow: var(--ui-shadow-sm);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 </style>

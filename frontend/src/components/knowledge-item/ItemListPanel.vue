@@ -112,13 +112,13 @@ function handleSearch() {
   display: flex;
   flex-direction: column;
   height: 100%;
-  border-right: 1px solid var(--color-border-2);
-  background: var(--color-bg-2);
+  border-right: 1px solid var(--color-border-1);
+  background: color-mix(in srgb, var(--color-bg-2) 96%, transparent);
 }
 
 .item-list-panel__toolbar {
-  padding: 12px;
-  border-bottom: 1px solid var(--color-border-2);
+  padding: 14px;
+  border-bottom: 1px solid var(--color-border-1);
 }
 
 .item-list-panel__list {

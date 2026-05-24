@@ -47,19 +47,26 @@ const emit = defineEmits<{
 <style scoped>
 .item-row {
   padding: 12px 14px;
+  margin: 4px 8px;
   border: 1px solid transparent;
-  border-bottom: 1px solid var(--color-border-2);
+  border-radius: var(--ui-radius-sm);
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition:
+    background var(--ui-duration-fast) var(--ui-ease),
+    border-color var(--ui-duration-fast) var(--ui-ease),
+    transform var(--ui-duration-fast) var(--ui-ease),
+    box-shadow var(--ui-duration-fast) var(--ui-ease);
 }
 
 .item-row:hover {
   background: var(--color-fill-2);
+  transform: translateX(2px);
 }
 
 .item-row--active {
   background: rgb(var(--primary-1));
   border-color: rgb(var(--primary-3));
+  box-shadow: 0 2px 10px rgba(var(--primary-6), 0.08);
 }
 
 .item-row__head {

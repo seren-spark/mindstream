@@ -59,21 +59,25 @@ function handleDrop(event: DragEvent) {
 
 <style scoped>
 .upload-trigger {
-  padding: 48px 24px;
-  border: 1px dashed var(--color-border-3);
-  border-radius: 12px;
+  padding: 52px 28px;
+  border: 2px dashed var(--color-border-2);
+  border-radius: var(--ui-radius-lg);
   text-align: center;
   cursor: pointer;
-  transition:
-    border-color 0.2s,
-    background 0.2s;
   background: var(--color-fill-1);
+  transition:
+    border-color var(--ui-duration) var(--ui-ease),
+    background var(--ui-duration) var(--ui-ease),
+    transform var(--ui-duration) var(--ui-ease),
+    box-shadow var(--ui-duration) var(--ui-ease);
 }
 
 .upload-trigger:hover,
 .upload-trigger--active {
-  border-color: rgb(var(--primary-6));
+  border-color: rgb(var(--primary-5));
   background: rgb(var(--primary-1));
+  transform: translateY(-2px);
+  box-shadow: var(--ui-shadow-soft);
 }
 
 .upload-trigger__input {

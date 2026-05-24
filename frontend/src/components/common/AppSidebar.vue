@@ -35,8 +35,8 @@ function handleMenuClick(key: string) {
     class="app-sidebar"
   >
     <div class="app-sidebar__brand">
-      <span v-if="!appStore.sidebarCollapsed">Knowledge Hub</span>
-      <span v-else>KH</span>
+      <span v-if="!appStore.sidebarCollapsed" class="app-sidebar__brand-text">Knowledge Hub</span>
+      <span v-else class="app-sidebar__brand-short">KH</span>
     </div>
 
     <a-menu
@@ -56,8 +56,10 @@ function handleMenuClick(key: string) {
 
 <style scoped>
 .app-sidebar {
-  background: var(--color-bg-2);
-  border-right: 1px solid var(--color-border-2);
+  background: color-mix(in srgb, var(--color-bg-2) 92%, transparent);
+  border-right: 1px solid var(--color-border-1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .app-sidebar__brand {
@@ -65,9 +67,19 @@ function handleMenuClick(key: string) {
   align-items: center;
   justify-content: center;
   height: 56px;
+  border-bottom: 1px solid var(--color-border-1);
+}
+
+.app-sidebar__brand-text {
   font-size: 14px;
   font-weight: 600;
   color: rgb(var(--primary-6));
-  border-bottom: 1px solid var(--color-border-2);
+  letter-spacing: -0.01em;
+}
+
+.app-sidebar__brand-short {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgb(var(--primary-6));
 }
 </style>

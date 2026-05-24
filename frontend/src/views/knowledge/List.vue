@@ -90,7 +90,7 @@ function handleDelete(item: KnowledgeBase) {
       </a-button>
     </template>
 
-    <div class="kb-toolbar">
+    <div class="kb-toolbar ui-toolbar">
       <a-input-search
         v-model="searchInput"
         allow-clear
@@ -140,16 +140,21 @@ function handleDelete(item: KnowledgeBase) {
         <a-button type="primary" @click="store.openCreateDrawer()">新建知识库</a-button>
       </a-empty>
 
-      <a-row v-else :gutter="[16, 16]">
-        <a-col v-for="item in store.list" :key="item.id" :xs="24" :sm="12" :lg="8" :xl="6">
+      <TransitionGroup v-else name="ui-stagger" tag="div" class="kb-grid">
+        <div
+          v-for="(item, i) in store.list"
+          :key="item.id"
+          class="kb-grid__item"
+          :style="{ '--stagger': i }"
+        >
           <KnowledgeBaseCard
             :item="item"
             @enter="handleEnter"
             @edit="store.openEditDrawer"
             @delete="handleDelete"
           />
-        </a-col>
-      </a-row>
+        </div>
+      </TransitionGroup>
     </a-spin>
 
     <div v-if="store.total > 0" class="kb-pagination">
@@ -168,16 +173,35 @@ function handleDelete(item: KnowledgeBase) {
 </template>
 
 <style scoped>
-.kb-toolbar {
+.ui-toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  background: var(--color-fill-1);
+  border-radius: var(--ui-radius-md);
+  border: 1px solid var(--color-border-1);
+}
+
+.kb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.kb-grid__item {
+  min-width: 0;
+}
+
+.ui-stagger-enter-active {
+  transition-delay: calc(min(var(--stagger, 0), 8) * 0.05s);
 }
 
 .kb-pagination {
   display: flex;
   justify-content: flex-end;
-  margin-top: 20px;
+  margin-top: 24px;
+  padding-top: 8px;
 }
 </style>
