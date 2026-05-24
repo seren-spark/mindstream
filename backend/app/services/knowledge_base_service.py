@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.models.knowledge_base import KnowledgeBase
 from app.schemas.knowledge_base import KnowledgeBaseCreate, KnowledgeBaseUpdate
+from app.services.vector_store_service import VectorStoreService
 
 
 class KnowledgeBaseNotFoundError(Exception):
@@ -88,5 +89,6 @@ class KnowledgeBaseService:
     @staticmethod
     def delete_knowledge_base(db: Session, knowledge_base_id: int) -> None:
         item = KnowledgeBaseService.get_knowledge_base(db, knowledge_base_id)
+        VectorStoreService.delete_knowledge_base_vectors(knowledge_base_id)
         db.delete(item)
         db.commit()

@@ -12,6 +12,7 @@ from app.schemas.knowledge_item import (
 from app.schemas.parse import ParseResult
 from app.services.chunk_service import ChunkService
 from app.services.knowledge_base_service import KnowledgeBaseNotFoundError, KnowledgeBaseService
+from app.services.vector_store_service import VectorStoreService
 
 
 class KnowledgeItemNotFoundError(Exception):
@@ -106,9 +107,12 @@ class KnowledgeItemService:
         item.processing_progress = 100
         item.error_message = None
         if item.content and item.content.strip():
-            ChunkService.apply_to_item(db, item, parse_result)
+            drafts = ChunkService.apply_to_item(db, item, parse_result)
+            db.flush()
+            VectorStoreService.upsert_chunks(item, drafts)
         else:
             item.chunk_count = 0
+            VectorStoreService.delete_item_vectors(item.knowledge_base_id, item.id)
 
     @staticmethod
     def create_item(
@@ -185,6 +189,8 @@ class KnowledgeItemService:
     @staticmethod
     def delete_item(db: Session, item_id: int) -> None:
         item = KnowledgeItemService.get_item(db, item_id)
+        kb_id = item.knowledge_base_id
+        VectorStoreService.delete_item_vectors(kb_id, item_id)
         db.delete(item)
         db.commit()
 
@@ -228,6 +234,11 @@ class KnowledgeItemService:
             payload.status,
             error_message=payload.error_message,
         )
+        if payload.status == KnowledgeItemStatus.DISABLED:
+            VectorStoreService.delete_item_vectors(item.knowledge_base_id, item.id)
+        elif payload.status == KnowledgeItemStatus.READY and item.content:
+            VectorStoreService.sync_item_from_db(db, item)
+
         db.commit()
         db.refresh(item)
         return item

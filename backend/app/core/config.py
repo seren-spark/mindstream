@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     chunk_overlap: int = 60
     chunk_min_size: int = 80
 
+    embedding_mode: str = "hash"
+    vector_search_top_k: int = 5
+
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     @property
