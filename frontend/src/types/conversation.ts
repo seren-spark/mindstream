@@ -3,6 +3,7 @@ import type { ChatMessageStatus, CitationRef } from './chat'
 export interface Conversation {
   id: string
   knowledge_base_id: number
+  agent_id?: string | null
   title: string
   message_count: number
   last_message_at: string | null

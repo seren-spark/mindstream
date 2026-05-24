@@ -23,15 +23,21 @@ function mapRecordToUiMessage(record: ConversationMessageRecord): ChatMessage {
 
 export const useChatSessionStore = defineStore('chatSession', () => {
   const conversationId = ref<string | null>(null)
+  const agentId = ref<string | null>(null)
   const conversations = ref<Conversation[]>([])
   const messages = ref<ChatMessage[]>([])
   const listLoading = ref(false)
   const messagesLoading = ref(false)
 
-  async function loadConversationList(knowledgeBaseId: number) {
+  async function loadConversationList(knowledgeBaseId: number, filterAgentId?: string | null) {
     listLoading.value = true
     try {
-      const { data } = await fetchConversations(knowledgeBaseId)
+      const { data } = await fetchConversations(
+        knowledgeBaseId,
+        1,
+        30,
+        filterAgentId ?? agentId.value,
+      )
       conversations.value = data.items
     } finally {
       listLoading.value = false
@@ -40,7 +46,7 @@ export const useChatSessionStore = defineStore('chatSession', () => {
 
   async function ensureConversation(knowledgeBaseId: number): Promise<string> {
     if (conversationId.value) return conversationId.value
-    const { data } = await createConversation(knowledgeBaseId)
+    const { data } = await createConversation(knowledgeBaseId, '新对话', agentId.value)
     conversationId.value = data.id
     conversations.value = [data, ...conversations.value]
     return data.id
@@ -67,6 +73,10 @@ export const useChatSessionStore = defineStore('chatSession', () => {
     messages.value = []
   }
 
+  function setAgentId(id: string | null) {
+    agentId.value = id
+  }
+
   async function removeConversation(knowledgeBaseId: number, id: string) {
     await deleteConversation(knowledgeBaseId, id)
     conversations.value = conversations.value.filter((c) => c.id !== id)
@@ -77,6 +87,7 @@ export const useChatSessionStore = defineStore('chatSession', () => {
 
   return {
     conversationId,
+    agentId,
     conversations,
     messages,
     listLoading,
@@ -86,6 +97,7 @@ export const useChatSessionStore = defineStore('chatSession', () => {
     loadConversation,
     reloadMessages,
     startNewConversation,
+    setAgentId,
     removeConversation,
   }
 })

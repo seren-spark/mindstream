@@ -27,12 +27,13 @@ def create_conversation(
 @router.get("", response_model=PaginatedResponse[ConversationResponse])
 def list_conversations(
     knowledge_base_id: int,
+    agent_id: str | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=30, ge=1, le=100),
     db: Session = Depends(get_db),
 ) -> PaginatedResponse[ConversationResponse]:
     items, total = ConversationService.list_conversations(
-        db, knowledge_base_id, page=page, page_size=page_size
+        db, knowledge_base_id, agent_id=agent_id, page=page, page_size=page_size
     )
     return PaginatedResponse(
         items=[ConversationResponse.model_validate(c) for c in items],

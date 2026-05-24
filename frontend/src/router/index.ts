@@ -43,6 +43,18 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/chat/Index.vue'),
         meta: { title: '智能问答', icon: 'icon-message' },
       },
+      {
+        path: 'agents/:agentId',
+        name: ROUTE_NAMES.AGENT_DETAIL,
+        component: () => import('@/views/agent/Detail.vue'),
+        meta: { title: '专家助手', hidden: true },
+      },
+      {
+        path: 'agents/:agentId/chat',
+        name: ROUTE_NAMES.AGENT_CHAT,
+        component: () => import('@/views/agent/Chat.vue'),
+        meta: { title: '专家对话', hidden: true },
+      },
     ],
   },
 ]

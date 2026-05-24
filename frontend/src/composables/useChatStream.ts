@@ -11,6 +11,7 @@ export interface SendChatOptions {
   query: string
   messages: ChatMessage[]
   conversationId?: string | null
+  agentId?: string | null
   onUpdate: (messages: ChatMessage[]) => void
   onDone?: () => void | Promise<void>
 }
@@ -26,7 +27,7 @@ export function useChatStream() {
   }
 
   async function send(options: SendChatOptions) {
-    const { knowledgeBaseId, query, messages, conversationId, onUpdate, onDone } = options
+    const { knowledgeBaseId, query, messages, conversationId, agentId, onUpdate, onDone } = options
     if (!knowledgeBaseId || !query.trim()) return
 
     const userMsg: ChatMessage = {
@@ -55,6 +56,7 @@ export function useChatStream() {
       query: query.trim(),
       history: history as ChatStreamRequest['history'],
       conversation_id: conversationId ?? undefined,
+      agent_id: agentId ?? undefined,
       top_k: 5,
     }
 

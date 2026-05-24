@@ -5,13 +5,25 @@ import type {
   PaginatedConversations,
 } from '@/types/conversation'
 
-export function createConversation(knowledgeBaseId: number, title = '新对话') {
-  return http.post<Conversation>(`/knowledge-bases/${knowledgeBaseId}/conversations`, { title })
+export function createConversation(
+  knowledgeBaseId: number,
+  title = '新对话',
+  agentId?: string | null,
+) {
+  return http.post<Conversation>(`/knowledge-bases/${knowledgeBaseId}/conversations`, {
+    title,
+    agent_id: agentId ?? undefined,
+  })
 }
 
-export function fetchConversations(knowledgeBaseId: number, page = 1, pageSize = 30) {
+export function fetchConversations(
+  knowledgeBaseId: number,
+  page = 1,
+  pageSize = 30,
+  agentId?: string | null,
+) {
   return http.get<PaginatedConversations>(`/knowledge-bases/${knowledgeBaseId}/conversations`, {
-    params: { page, page_size: pageSize },
+    params: { page, page_size: pageSize, agent_id: agentId ?? undefined },
   })
 }
 

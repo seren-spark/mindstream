@@ -29,9 +29,11 @@ class ConversationService:
     @staticmethod
     def create(db: Session, knowledge_base_id: int, payload: ConversationCreate | None = None) -> Conversation:
         title = (payload.title if payload else None) or "新对话"
+        agent_id = payload.agent_id if payload else None
         conv = Conversation(
             id=str(uuid.uuid4()),
             knowledge_base_id=knowledge_base_id,
+            agent_id=agent_id,
             title=title,
             message_count=0,
         )
@@ -57,17 +59,14 @@ class ConversationService:
         db: Session,
         knowledge_base_id: int,
         *,
+        agent_id: str | None = None,
         page: int = 1,
         page_size: int = 30,
     ) -> tuple[list[Conversation], int]:
-        total = (
-            db.scalar(
-                select(func.count())
-                .select_from(Conversation)
-                .where(Conversation.knowledge_base_id == knowledge_base_id)
-            )
-            or 0
-        )
+        base = select(Conversation).where(Conversation.knowledge_base_id == knowledge_base_id)
+        if agent_id is not None:
+            base = base.where(Conversation.agent_id == agent_id)
+        total = db.scalar(select(func.count()).select_from(base.subquery())) or 0
         items = db.scalars(
             base.order_by(desc(Conversation.last_message_at), desc(Conversation.updated_at))
             .offset((page - 1) * page_size)

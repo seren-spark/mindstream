@@ -2,23 +2,29 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
+import { IconLeft } from '@arco-design/web-vue/es/icon'
 import ChatMessageItem from '@/components/chat/ChatMessageItem.vue'
 import ChatEmptyState from '@/components/chat/ChatEmptyState.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatScrollFab from '@/components/chat/ChatScrollFab.vue'
 import ChatSidebar from '@/components/chat/ChatSidebar.vue'
+import { fetchAgent } from '@/api/agent'
 import { useChatStream } from '@/composables/useChatStream'
 import { useChatScroll } from '@/composables/useChatScroll'
 import { useChatSessionStore } from '@/stores/chat-session'
-import { useKnowledgeBaseStore } from '@/stores/knowledge-base'
+import type { ExpertAgent } from '@/types/agent'
+import { ROUTE_NAMES } from '@/utils/constants'
 
 const route = useRoute()
 const router = useRouter()
 const input = ref('')
-const knowledgeBaseId = ref<number | undefined>(undefined)
 const scrollRef = ref<HTMLElement | null>(null)
+const agent = ref<ExpertAgent | null>(null)
+const agentLoading = ref(false)
 
-const kbStore = useKnowledgeBaseStore()
+const agentId = computed(() => route.params.agentId as string)
+const knowledgeBaseId = computed(() => Number(route.query.kbId))
+
 const sessionStore = useChatSessionStore()
 const { streaming, send, cancel } = useChatStream()
 const { pinned, onScroll, scrollToBottom } = useChatScroll(scrollRef)
@@ -31,13 +37,9 @@ const messages = computed({
 })
 
 const showScrollFab = computed(() => !pinned.value && messages.value.length > 0)
-
 const canSend = computed(
-  () => !!knowledgeBaseId.value && input.value.trim().length > 0 && !streaming.value,
-)
-
-const selectedKbName = computed(
-  () => kbStore.list.find((kb) => kb.id === knowledgeBaseId.value)?.name,
+  () =>
+    !!knowledgeBaseId.value && !!agent.value && input.value.trim().length > 0 && !streaming.value,
 )
 
 function syncRouteConversation(id: string | null) {
@@ -47,19 +49,40 @@ function syncRouteConversation(id: string | null) {
   router.replace({ query })
 }
 
-async function bootstrapKb() {
-  await kbStore.loadList()
-  if (kbStore.list.length > 0 && !knowledgeBaseId.value) {
-    knowledgeBaseId.value = kbStore.list[0].id
+async function loadAgent() {
+  if (!knowledgeBaseId.value) return
+  agentLoading.value = true
+  try {
+    const { data } = await fetchAgent(knowledgeBaseId.value, agentId.value)
+    if (data.status !== 'published') {
+      Message.warning('该助手尚未发布')
+      router.replace({
+        name: ROUTE_NAMES.AGENT_DETAIL,
+        params: { agentId: agentId.value },
+        query: { kbId: knowledgeBaseId.value },
+      })
+      return
+    }
+    agent.value = data
+    sessionStore.setAgentId(data.id)
+  } catch {
+    Message.error('加载专家助手失败')
+  } finally {
+    agentLoading.value = false
   }
 }
 
-async function onKnowledgeBaseChange(kbId: number | undefined) {
-  if (!kbId) return
-  sessionStore.startNewConversation()
-  syncRouteConversation(null)
-  await sessionStore.loadConversationList(kbId)
+async function bootstrap() {
+  await loadAgent()
+  if (!knowledgeBaseId.value || !agent.value) return
+  await sessionStore.loadConversationList(knowledgeBaseId.value, agentId.value)
+  const convId = route.query.conversationId as string | undefined
+  if (convId) {
+    await sessionStore.loadConversation(knowledgeBaseId.value, convId)
+  }
 }
+
+onMounted(bootstrap)
 
 async function openConversation(id: string) {
   if (!knowledgeBaseId.value || streaming.value) return
@@ -80,31 +103,11 @@ async function handleDeleteConversation(id: string) {
   try {
     await sessionStore.removeConversation(knowledgeBaseId.value, id)
     Message.success('已删除对话')
-    if (!sessionStore.conversationId) {
-      syncRouteConversation(null)
-    }
+    if (!sessionStore.conversationId) syncRouteConversation(null)
   } catch {
     Message.error('删除失败')
   }
 }
-
-onMounted(async () => {
-  sessionStore.setAgentId(null)
-  await bootstrapKb()
-  const qKb = route.query.kbId
-  if (qKb) knowledgeBaseId.value = Number(qKb)
-  const convId = route.query.conversationId as string | undefined
-  if (knowledgeBaseId.value) {
-    await sessionStore.loadConversationList(knowledgeBaseId.value)
-    if (convId) {
-      await sessionStore.loadConversation(knowledgeBaseId.value, convId)
-    }
-  }
-})
-
-watch(knowledgeBaseId, (id) => {
-  if (id) onKnowledgeBaseChange(id)
-})
 
 watch(
   messages,
@@ -115,18 +118,10 @@ watch(
   { deep: true },
 )
 
-watch(streaming, async (now, prev) => {
-  if (prev && !now) {
-    await nextTick()
-    scrollToBottom('smooth')
-  }
-})
-
 async function handleSend() {
-  if (!canSend.value || !knowledgeBaseId.value) return
+  if (!canSend.value || !knowledgeBaseId.value || !agent.value) return
   const query = input.value
   input.value = ''
-
   const kbId = knowledgeBaseId.value
   const convId = await sessionStore.ensureConversation(kbId)
   syncRouteConversation(convId)
@@ -136,12 +131,13 @@ async function handleSend() {
     query,
     messages: messages.value,
     conversationId: convId,
+    agentId: agent.value.id,
     onUpdate: (next) => {
       messages.value = next
     },
     onDone: async () => {
       await sessionStore.reloadMessages(kbId)
-      await sessionStore.loadConversationList(kbId)
+      await sessionStore.loadConversationList(kbId, agent.value!.id)
     },
   })
 }
@@ -161,8 +157,12 @@ function onPickSuggestion(text: string) {
   input.value = text
 }
 
-function handleScrollFab() {
-  scrollToBottom('smooth')
+function goBack() {
+  router.push({
+    name: ROUTE_NAMES.AGENT_DETAIL,
+    params: { agentId: agentId.value },
+    query: { kbId: knowledgeBaseId.value },
+  })
 }
 </script>
 
@@ -180,42 +180,39 @@ function handleScrollFab() {
     <div class="chat-page">
       <header class="chat-page__header">
         <div class="chat-page__header-inner">
-          <div class="chat-page__kb">
-            <span class="chat-page__kb-label">知识库</span>
-            <a-select
-              v-model="knowledgeBaseId"
-              placeholder="请选择知识库"
-              allow-search
-              :bordered="false"
-              class="chat-page__kb-select"
-              :loading="kbStore.listLoading"
-            >
-              <a-option v-for="kb in kbStore.list" :key="kb.id" :value="kb.id" :label="kb.name" />
-            </a-select>
+          <a-button type="text" size="small" @click="goBack">
+            <template #icon><icon-left /></template>
+          </a-button>
+          <div v-if="agent" class="chat-page__agent">
+            <span class="chat-page__agent-emoji">{{ agent.avatar_value }}</span>
+            <div>
+              <div class="chat-page__agent-name">{{ agent.name }}</div>
+              <div class="chat-page__agent-desc">{{ agent.description }}</div>
+            </div>
           </div>
-          <Transition name="ui-fade" mode="out-in">
-            <a-tag
-              v-if="streaming"
-              key="streaming"
-              color="arcoblue"
-              size="small"
-              class="chat-page__tag"
-            >
-              <span class="chat-page__pulse" />生成中
-            </a-tag>
-            <span v-else-if="selectedKbName" key="hint" class="chat-page__kb-hint">{{
-              selectedKbName
-            }}</span>
-          </Transition>
+          <a-tag v-if="streaming" color="arcoblue" size="small">生成中</a-tag>
         </div>
       </header>
 
       <main ref="scrollRef" class="chat-page__main" @scroll="onScroll">
-        <a-spin :loading="sessionStore.messagesLoading" class="chat-page__spin">
+        <a-spin :loading="sessionStore.messagesLoading || agentLoading" class="chat-page__spin">
           <div class="chat-page__thread">
             <Transition name="ui-fade" mode="out-in">
-              <ChatEmptyState v-if="!messages.length" key="empty" @pick="onPickSuggestion" />
-              <TransitionGroup v-else key="list" name="chat-msg" tag="div" class="chat-page__list">
+              <ChatEmptyState
+                v-if="!messages.length && agent"
+                key="empty"
+                :title="agent.name"
+                :description="agent.welcome_message"
+                :suggestions="agent.suggested_questions"
+                @pick="onPickSuggestion"
+              />
+              <TransitionGroup
+                v-else-if="messages.length"
+                key="list"
+                name="chat-msg"
+                tag="div"
+                class="chat-page__list"
+              >
                 <ChatMessageItem
                   v-for="msg in messages"
                   :key="msg.id"
@@ -226,7 +223,7 @@ function handleScrollFab() {
             </Transition>
           </div>
         </a-spin>
-        <ChatScrollFab :visible="showScrollFab" @click="handleScrollFab" />
+        <ChatScrollFab :visible="showScrollFab" @click="scrollToBottom('smooth')" />
       </main>
 
       <footer class="chat-page__footer">
@@ -269,68 +266,43 @@ function handleScrollFab() {
   flex-shrink: 0;
   border-bottom: 1px solid var(--color-border-1);
   background: color-mix(in srgb, var(--color-bg-2) 90%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 .chat-page__header-inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   max-width: 768px;
   margin: 0 auto;
   padding: 12px 20px;
-  gap: 12px;
 }
 
-.chat-page__kb {
+.chat-page__agent {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
   min-width: 0;
+  flex: 1;
 }
 
-.chat-page__kb-label {
-  flex-shrink: 0;
-  font-size: 13px;
-  color: var(--color-text-3);
+.chat-page__agent-emoji {
+  font-size: 28px;
+  line-height: 1;
 }
 
-.chat-page__kb-select {
-  min-width: 160px;
-  max-width: 280px;
+.chat-page__agent-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-1);
 }
 
-.chat-page__kb-hint {
-  flex-shrink: 0;
+.chat-page__agent-desc {
   font-size: 12px;
-  color: var(--color-text-4);
-}
-
-.chat-page__tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.chat-page__pulse {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgb(var(--primary-6));
-  animation: pulse 1.4s var(--chat-ease) infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.35;
-    transform: scale(0.85);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
+  color: var(--color-text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 360px;
 }
 
 .chat-page__main {
@@ -338,10 +310,7 @@ function handleScrollFab() {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  overflow-x: hidden;
   padding: 28px 20px 40px;
-  scroll-behavior: smooth;
-  overscroll-behavior: contain;
 }
 
 .chat-page__spin {
@@ -355,16 +324,10 @@ function handleScrollFab() {
   margin: 0 auto;
 }
 
-.chat-page__list {
-  display: block;
-}
-
 .chat-page__footer {
   flex-shrink: 0;
   padding: 14px 20px 18px;
   border-top: 1px solid var(--color-border-1);
   background: color-mix(in srgb, var(--color-bg-2) 92%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
 }
 </style>

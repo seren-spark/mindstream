@@ -1,9 +1,20 @@
 <script setup lang="ts">
-const suggestions = [
-  '这份文档的核心流程是什么？',
-  '有哪些注意事项或限制条件？',
-  '和上一版相比有什么变化？',
-]
+withDefaults(
+  defineProps<{
+    title?: string
+    description?: string
+    suggestions?: string[]
+  }>(),
+  {
+    title: '向知识库提问',
+    description: '基于检索增强生成，支持流式回答与引用来源核对',
+    suggestions: () => [
+      '这份文档的核心流程是什么？',
+      '有哪些注意事项或限制条件？',
+      '和上一版相比有什么变化？',
+    ],
+  },
+)
 
 const emit = defineEmits<{
   pick: [text: string]
@@ -25,8 +36,8 @@ const emit = defineEmits<{
         <circle cx="38" cy="10" r="3" fill="rgb(var(--primary-6))" />
       </svg>
     </div>
-    <h3 class="chat-empty__title">向知识库提问</h3>
-    <p class="chat-empty__desc">基于检索增强生成，支持流式回答与引用来源核对</p>
+    <h3 class="chat-empty__title">{{ title }}</h3>
+    <p class="chat-empty__desc">{{ description }}</p>
     <div class="chat-empty__chips">
       <button
         v-for="(item, i) in suggestions"

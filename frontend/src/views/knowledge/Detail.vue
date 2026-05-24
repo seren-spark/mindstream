@@ -6,6 +6,7 @@ import { IconEdit, IconLeft } from '@arco-design/web-vue/es/icon'
 import PageContainer from '@/components/common/PageContainer.vue'
 import KnowledgeBaseFormDrawer from '@/components/knowledge/KnowledgeBaseFormDrawer.vue'
 import KnowledgeItemManager from '@/components/knowledge/KnowledgeItemManager.vue'
+import AgentPanel from '@/components/knowledge/AgentPanel.vue'
 import { useKnowledgeBaseStore } from '@/stores/knowledge-base'
 import { ROUTE_NAMES } from '@/utils/constants'
 import { formatDateTime } from '@/utils/format'
@@ -124,6 +125,9 @@ function handleDelete() {
           </a-tab-pane>
           <a-tab-pane key="vectors" title="向量状态">
             <a-empty description="向量化状态将在 ChromaDB 模块中展示" />
+          </a-tab-pane>
+          <a-tab-pane key="agents" title="专家助手">
+            <AgentPanel :knowledge-base-id="knowledgeBaseId" />
           </a-tab-pane>
           <a-tab-pane key="chat" title="关联问答">
             <a-empty description="可在此知识库范围内发起 RAG 对话（后续模块）">

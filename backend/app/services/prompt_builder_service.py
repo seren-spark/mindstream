@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from app.core.config import get_settings
+from app.models.agent import ExpertAgent
+from app.services.agent_prompt_composer import AgentPromptComposer
 from app.schemas.prompt import (
     ChatMessage,
     ChatRole,
@@ -148,15 +150,27 @@ class PromptBuilderService:
         return f"{SYSTEM_INSTRUCTION}{kb_line}{knowledge_section}"
 
     @classmethod
-    def build(cls, request: PromptBuildRequest) -> PromptBuildResult:
+    def build(
+        cls,
+        request: PromptBuildRequest,
+        *,
+        agent: ExpertAgent | None = None,
+    ) -> PromptBuildResult:
         trimmed_hits, context_trimmed = cls.trim_hits(request.hits)
         context_block, citations = cls.build_context_block(trimmed_hits)
         history = cls.trim_history(request.history)
 
-        system_prompt = cls.build_system_prompt(
-            context_block=context_block,
-            knowledge_base_name=request.knowledge_base_name,
-        )
+        if agent:
+            system_prompt = AgentPromptComposer.compose_system_prompt(
+                agent=agent,
+                kb_name=request.knowledge_base_name,
+                context_block=context_block,
+            )
+        else:
+            system_prompt = cls.build_system_prompt(
+                context_block=context_block,
+                knowledge_base_name=request.knowledge_base_name,
+            )
 
         messages: list[LlmMessage] = [LlmMessage(role="system", content=system_prompt)]
 
@@ -195,6 +209,7 @@ class PromptBuilderService:
         *,
         history: list[ChatMessage] | None = None,
         knowledge_base_name: str = "",
+        agent: ExpertAgent | None = None,
     ) -> PromptBuildResult:
         return cls.build(
             PromptBuildRequest(
@@ -202,5 +217,6 @@ class PromptBuilderService:
                 hits=hits,
                 history=history or [],
                 knowledge_base_name=knowledge_base_name,
-            )
+            ),
+            agent=agent,
         )

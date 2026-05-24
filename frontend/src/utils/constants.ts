@@ -5,4 +5,6 @@ export const ROUTE_NAMES = {
   KNOWLEDGE_ITEMS: 'KnowledgeItems',
   KNOWLEDGE_UPLOAD: 'KnowledgeUpload',
   CHAT: 'Chat',
+  AGENT_DETAIL: 'AgentDetail',
+  AGENT_CHAT: 'AgentChat',
 } as const

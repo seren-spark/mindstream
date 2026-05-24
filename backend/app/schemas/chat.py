@@ -8,6 +8,7 @@ class ChatStreamRequest(BaseModel):
     query: str = Field(min_length=1, max_length=2000)
     history: list[ChatMessage] = Field(default_factory=list, max_length=20)
     conversation_id: str | None = Field(default=None, max_length=36)
+    agent_id: str | None = Field(default=None, max_length=36)
     top_k: int = Field(default=5, ge=1, le=20)
     filter: VectorQueryFilter = Field(default_factory=VectorQueryFilter)
 

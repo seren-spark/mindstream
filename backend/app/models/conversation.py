@@ -19,6 +19,12 @@ class Conversation(Base, TimestampMixin):
         nullable=False,
         index=True,
     )
+    agent_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("expert_agents.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     title: Mapped[str] = mapped_column(String(200), nullable=False, default="新对话")
     message_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_message_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

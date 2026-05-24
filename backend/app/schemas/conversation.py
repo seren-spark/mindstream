@@ -7,6 +7,7 @@ from app.schemas.prompt import CitationRef
 
 class ConversationCreate(BaseModel):
     title: str = Field(default="新对话", max_length=200)
+    agent_id: str | None = Field(default=None, max_length=36)
 
 
 class ConversationUpdate(BaseModel):
@@ -16,6 +17,7 @@ class ConversationUpdate(BaseModel):
 class ConversationResponse(BaseModel):
     id: str
     knowledge_base_id: int
+    agent_id: str | None = None
     title: str
     message_count: int
     last_message_at: datetime | None
