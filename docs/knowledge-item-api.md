@@ -1,31 +1,59 @@
 # 知识条目 API
 
-## 列表（按知识库）
+Base URL: `http://127.0.0.1:8000/api`
 
-`GET /api/knowledge-bases/{knowledge_base_id}/items`
+## 列表
 
-Query: `keyword`, `status`, `source_type`, `category`, `tag`, `sort`, `page`, `page_size`
+`GET /knowledge-bases/{knowledge_base_id}/items`
+
+Query:
+
+| 参数 | 说明 |
+|------|------|
+| keyword | 搜索标题/摘要/正文 |
+| status | pending / processing / ready / failed / disabled |
+| source_type | manual / file / ai_generated |
+| category | 分类精确匹配 |
+| tag | 标签包含 |
+| sort | updated_at_desc（默认）/ created_at_asc / title_asc |
+| page, page_size | 分页 |
 
 ## 创建
 
-`POST /api/knowledge-bases/{knowledge_base_id}/items`
+`POST /knowledge-bases/{knowledge_base_id}/items`
 
-手动录入有内容时默认 `ready`；文件导入默认 `pending`。
+```json
+{
+  "title": "产品 FAQ",
+  "source_type": "manual",
+  "content": "# 常见问题\n...",
+  "category": "产品文档",
+  "tags": ["faq", "产品"]
+}
+```
 
-## 详情 / 更新 / 删除
+## 详情
 
-- `GET /api/knowledge-items/{item_id}`
-- `PUT /api/knowledge-items/{item_id}`
-- `DELETE /api/knowledge-items/{item_id}`
+`GET /knowledge-items/{item_id}`
 
-## 状态流转
+## 更新
 
-`PATCH /api/knowledge-items/{item_id}/status`
+`PUT /knowledge-items/{item_id}`
 
-状态：`pending` → `processing` → `ready` / `failed`；支持 `disabled`。
+## 状态更新
+
+`PATCH /knowledge-items/{item_id}/status`
+
+```json
+{ "status": "disabled" }
+```
 
 ## 触发处理（Demo）
 
-`POST /api/knowledge-items/{item_id}/process`
+`POST /knowledge-items/{item_id}/process`
 
-模拟解析/向量化流程，后续可替换为异步任务队列。
+Mock：pending/failed → processing → ready（有内容）或 failed（纯文件且无解析模块）。
+
+## 删除
+
+`DELETE /knowledge-items/{item_id}` → 204
