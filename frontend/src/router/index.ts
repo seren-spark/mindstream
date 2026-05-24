@@ -20,6 +20,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '知识库管理', icon: 'icon-book' },
       },
       {
+        path: 'knowledge/:id/items/:itemId?',
+        name: ROUTE_NAMES.KNOWLEDGE_ITEMS,
+        component: () => import('@/views/knowledge/Items.vue'),
+        meta: { title: '知识条目', hidden: true },
+      },
+      {
         path: 'knowledge/upload',
         name: ROUTE_NAMES.KNOWLEDGE_UPLOAD,
         component: () => import('@/views/knowledge/Upload.vue'),

@@ -113,9 +113,25 @@ function handleDelete() {
 
         <a-tabs default-active-key="documents">
           <a-tab-pane key="documents" title="知识条目">
-            <a-empty description="文档导入与解析模块尚未接入">
-              <a-button disabled>导入文档</a-button>
-            </a-empty>
+            <a-result
+              status="info"
+              title="知识条目管理"
+              subtitle="在此录入、编辑内容，后续可导入文档并进入向量化流程"
+            >
+              <template #extra>
+                <a-button
+                  type="primary"
+                  @click="
+                    router.push({
+                      name: ROUTE_NAMES.KNOWLEDGE_ITEMS,
+                      params: { id: knowledgeBaseId },
+                    })
+                  "
+                >
+                  管理知识条目
+                </a-button>
+              </template>
+            </a-result>
           </a-tab-pane>
           <a-tab-pane key="vectors" title="向量状态">
             <a-empty description="向量化状态将在 ChromaDB 模块中展示" />
