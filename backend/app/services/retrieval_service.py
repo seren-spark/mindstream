@@ -302,12 +302,8 @@ class RetrievalService:
 
     @classmethod
     def build_rag_context(cls, hits: list[RetrievalHit]) -> str:
-        """将检索结果格式化为 RAG prompt context。"""
-        if not hits:
-            return ""
-        blocks: list[str] = []
-        for i, hit in enumerate(hits, start=1):
-            blocks.append(
-                f"[{i}] 来源：{hit.display_title}\n{hit.content}"
-            )
-        return "\n\n".join(blocks)
+        """将检索结果格式化为 RAG prompt context（委托 PromptBuilder）。"""
+        from app.services.prompt_builder_service import PromptBuilderService
+
+        result = PromptBuilderService.build_from_hits("", hits)
+        return result.context_block

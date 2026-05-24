@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     hybrid_final_top_k: int = 5
     rrf_k: int = 60
 
+    rag_max_history_turns: int = 3
+    rag_max_context_chars: int = 6000
+    rag_chunk_max_chars: int = 800
+
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     @property
