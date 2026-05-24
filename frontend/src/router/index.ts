@@ -1,0 +1,49 @@
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { ROUTE_NAMES } from '@/utils/constants'
+
+const routes: RouteRecordRaw[] = [
+  {
+    path: '/',
+    component: () => import('@/layouts/DefaultLayout.vue'),
+    redirect: '/dashboard',
+    children: [
+      {
+        path: 'dashboard',
+        name: ROUTE_NAMES.DASHBOARD,
+        component: () => import('@/views/dashboard/Index.vue'),
+        meta: { title: '概览', icon: 'icon-dashboard' },
+      },
+      {
+        path: 'knowledge',
+        name: ROUTE_NAMES.KNOWLEDGE_LIST,
+        component: () => import('@/views/knowledge/List.vue'),
+        meta: { title: '知识库管理', icon: 'icon-book' },
+      },
+      {
+        path: 'knowledge/upload',
+        name: ROUTE_NAMES.KNOWLEDGE_UPLOAD,
+        component: () => import('@/views/knowledge/Upload.vue'),
+        meta: { title: '上传知识', hidden: true },
+      },
+      {
+        path: 'knowledge/:id',
+        name: ROUTE_NAMES.KNOWLEDGE_DETAIL,
+        component: () => import('@/views/knowledge/Detail.vue'),
+        meta: { title: '知识库详情', hidden: true },
+      },
+      {
+        path: 'chat',
+        name: ROUTE_NAMES.CHAT,
+        component: () => import('@/views/chat/Index.vue'),
+        meta: { title: '智能问答', icon: 'icon-message' },
+      },
+    ],
+  },
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+})
+
+export default router
