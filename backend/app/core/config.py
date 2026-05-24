@@ -26,6 +26,11 @@ class Settings(BaseSettings):
 
     embedding_mode: str = "hash"
     vector_search_top_k: int = 5
+    embedding_batch_size: int = 32
+    embedding_max_retries: int = 3
+    embedding_retry_base_delay: float = 1.0
+    embedding_cache_enabled: bool = True
+    embedding_cache_path: str = "./data/embedding_cache.json"
 
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 

@@ -11,6 +11,8 @@ from app.schemas.knowledge_item import (
 )
 from app.schemas.parse import ParseResult
 from app.services.chunk_service import ChunkService
+from app.services.embedding_service import EmbeddingPipelineError
+from app.services.indexing_service import IndexingService
 from app.services.knowledge_base_service import KnowledgeBaseNotFoundError, KnowledgeBaseService
 from app.services.vector_store_service import VectorStoreService
 
@@ -107,9 +109,15 @@ class KnowledgeItemService:
         item.processing_progress = 100
         item.error_message = None
         if item.content and item.content.strip():
-            drafts = ChunkService.apply_to_item(db, item, parse_result)
-            db.flush()
-            VectorStoreService.upsert_chunks(item, drafts)
+            try:
+                drafts = ChunkService.apply_to_item(db, item, parse_result)
+                db.flush()
+                item.processing_progress = 50
+                db.flush()
+                IndexingService.safe_index_item(db, item, drafts)
+                item.status = KnowledgeItemStatus.READY.value
+            except EmbeddingPipelineError:
+                pass
         else:
             item.chunk_count = 0
             VectorStoreService.delete_item_vectors(item.knowledge_base_id, item.id)
@@ -283,7 +291,6 @@ class KnowledgeItemService:
         db.commit()
 
         if item.content:
-            item.status = KnowledgeItemStatus.READY.value
             KnowledgeItemService._finalize_ready(db, item)
         else:
             item.status = KnowledgeItemStatus.FAILED.value

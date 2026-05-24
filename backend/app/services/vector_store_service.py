@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.models.chunk import Chunk
 from app.models.knowledge_item import KnowledgeItem
-from app.schemas.chunk import ChunkDraft, ChunkMetadata, SourceLocation
+from app.schemas.chunk import ChunkDraft, SourceLocation
 from app.schemas.knowledge_item import KnowledgeItemStatus
 from app.schemas.vector import (
     VectorMetadata,
@@ -122,10 +122,21 @@ class VectorStoreService:
         return [row[0] for row in rows]
 
     @classmethod
-    def upsert_chunks(cls, item: KnowledgeItem, drafts: list[ChunkDraft]) -> int:
+    def upsert_vectors(
+        cls,
+        item: KnowledgeItem,
+        drafts: list[ChunkDraft],
+        embeddings: list[list[float]],
+    ) -> int:
+        """写入预计算向量（不负责 embedding）。"""
         if not drafts:
             cls.delete_item_vectors(item.knowledge_base_id, item.id)
             return 0
+
+        if len(drafts) != len(embeddings):
+            raise ValueError(
+                f"drafts/embeddings 数量不一致: {len(drafts)} vs {len(embeddings)}"
+            )
 
         collection = cls._get_collection(item.knowledge_base_id)
         cls.delete_item_vectors(item.knowledge_base_id, item.id)
@@ -133,7 +144,6 @@ class VectorStoreService:
         ids = [d.chunk_id for d in drafts]
         documents = [d.content for d in drafts]
         metadatas = [cls.build_metadata(item, d) for d in drafts]
-        embeddings = EmbeddingService.embed_texts(documents)
 
         collection.upsert(
             ids=ids,
@@ -150,31 +160,19 @@ class VectorStoreService:
         return len(ids)
 
     @classmethod
-    def sync_item_from_db(cls, db: Session, item: KnowledgeItem) -> int:
-        rows = (
-            db.query(Chunk)
-            .filter(Chunk.knowledge_item_id == item.id)
-            .order_by(Chunk.order_index.asc())
-            .all()
-        )
-        if not rows:
-            cls.delete_item_vectors(item.knowledge_base_id, item.id)
-            return 0
+    def upsert_chunks(cls, item: KnowledgeItem, drafts: list[ChunkDraft]) -> int:
+        """兼容旧接口：内部走 IndexingService（embed + upsert）。"""
+        from app.services.indexing_service import IndexingService
 
-        drafts = [
-            ChunkDraft(
-                chunk_id=row.id,
-                knowledge_item_id=row.knowledge_item_id,
-                knowledge_base_id=row.knowledge_base_id,
-                content=row.content,
-                order_index=row.order_index,
-                token_count=row.token_count,
-                source_location=SourceLocation.model_validate(row.source_location),
-                metadata=ChunkMetadata.model_validate(row.chunk_metadata),
-            )
-            for row in rows
-        ]
-        return cls.upsert_chunks(item, drafts)
+        result = IndexingService.index_item(item, drafts)
+        return result.vector_count
+
+    @classmethod
+    def sync_item_from_db(cls, db: Session, item: KnowledgeItem) -> int:
+        from app.services.indexing_service import IndexingService
+
+        result = IndexingService.index_item_from_db(db, item)
+        return result.vector_count
 
     @classmethod
     def delete_item_vectors(cls, knowledge_base_id: int, knowledge_item_id: int) -> None:
