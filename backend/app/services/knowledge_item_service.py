@@ -216,7 +216,10 @@ class KnowledgeItemService:
 
     @staticmethod
     def trigger_process(db: Session, item_id: int) -> KnowledgeItem:
-        """Mock processing pipeline for demo — real impl would enqueue async tasks."""
+        """Run parse pipeline — text files parse inline; binary formats stay pending with hint."""
+        from app.services.parser_service import ParserService
+        from app.services.upload_service import UploadService
+
         item = KnowledgeItemService.get_item(db, item_id)
 
         if item.status not in {
@@ -225,18 +228,22 @@ class KnowledgeItemService:
         }:
             raise InvalidStatusTransitionError(item.status, KnowledgeItemStatus.PROCESSING.value)
 
+        if item.source_type == KnowledgeItemSourceType.FILE.value and item.file_path:
+            UploadService._parse_item(db, item)
+            db.refresh(item)
+            return item
+
         item.status = KnowledgeItemStatus.PROCESSING.value
         item.processing_progress = 50
         item.error_message = None
         db.commit()
 
-        if item.source_type == KnowledgeItemSourceType.FILE.value and not item.content:
-            item.status = KnowledgeItemStatus.FAILED.value
-            item.error_message = "文件解析模块尚未接入，请先使用手动录入或等待后续版本"
-            item.processing_progress = 0
-        else:
+        if item.content:
             item.status = KnowledgeItemStatus.READY.value
             KnowledgeItemService._apply_ready_metadata(item)
+        else:
+            item.status = KnowledgeItemStatus.FAILED.value
+            item.error_message = ParserService.unsupported_message(item.file_type or "")
 
         db.commit()
         db.refresh(item)

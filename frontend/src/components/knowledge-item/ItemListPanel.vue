@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { IconUpload } from '@arco-design/web-vue/es/icon'
 import ItemListRow from '@/components/knowledge-item/ItemListRow.vue'
 import { useKnowledgeItemStore } from '@/stores/knowledge-item'
 import type { KnowledgeItemListItem } from '@/types/knowledge-item'
+import { ROUTE_NAMES } from '@/utils/constants'
 
 const props = defineProps<{
   knowledgeBaseId: number
@@ -14,6 +17,7 @@ const emit = defineEmits<{
   create: []
 }>()
 
+const router = useRouter()
 const store = useKnowledgeItemStore()
 const searchInput = ref(store.keyword)
 
@@ -57,6 +61,20 @@ function handleSearch() {
       />
       <a-button type="primary" long size="small" style="margin-top: 8px" @click="emit('create')">
         新建条目
+      </a-button>
+      <a-button
+        long
+        size="small"
+        style="margin-top: 8px"
+        @click="
+          router.push({
+            name: ROUTE_NAMES.KNOWLEDGE_UPLOAD,
+            params: { id: props.knowledgeBaseId },
+          })
+        "
+      >
+        <template #icon><icon-upload /></template>
+        导入文档
       </a-button>
     </div>
 

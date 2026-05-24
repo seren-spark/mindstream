@@ -26,10 +26,10 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '知识条目', hidden: true },
       },
       {
-        path: 'knowledge/upload',
+        path: 'knowledge/:id/upload',
         name: ROUTE_NAMES.KNOWLEDGE_UPLOAD,
         component: () => import('@/views/knowledge/Upload.vue'),
-        meta: { title: '上传知识', hidden: true },
+        meta: { title: '导入文档', hidden: true },
       },
       {
         path: 'knowledge/:id',

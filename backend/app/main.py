@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from app.api.knowledge_base import router as knowledge_base_router
 from app.api.knowledge_item import router as knowledge_item_router
 from app.api.ping import router as ping_router
+from app.api.upload import router as upload_router
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.schemas.common import ErrorResponse
@@ -48,6 +49,7 @@ async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse
 app.include_router(ping_router, prefix="/api")
 app.include_router(knowledge_base_router, prefix="/api")
 app.include_router(knowledge_item_router, prefix="/api")
+app.include_router(upload_router, prefix="/api")
 
 
 @app.get("/")

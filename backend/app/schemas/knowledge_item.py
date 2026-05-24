@@ -92,6 +92,10 @@ class KnowledgeItemListItem(BaseModel):
     tags: list[str]
     category: str | None
     file_name: str | None
+    file_path: str | None
+    file_type: str | None
+    mime_type: str | None
+    file_size: int
     chunk_count: int
     processing_progress: int
     error_message: str | None
@@ -112,7 +116,10 @@ class KnowledgeItemResponse(BaseModel):
     tags: list[str]
     category: str | None
     file_name: str | None
+    file_path: str | None
     file_type: str | None
+    mime_type: str | None
+    file_size: int
     chunk_count: int
     processing_progress: int
     error_message: str | None
