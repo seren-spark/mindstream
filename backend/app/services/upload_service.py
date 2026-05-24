@@ -10,7 +10,6 @@ from app.models.knowledge_item import KnowledgeItem
 from app.schemas.knowledge_item import KnowledgeItemSourceType, KnowledgeItemStatus
 from app.schemas.upload import BatchUploadResponse, ParseStatus, UploadFileResult
 from app.services.knowledge_base_service import KnowledgeBaseNotFoundError, KnowledgeBaseService
-from app.services.knowledge_item_service import KnowledgeItemService
 from app.services.parser_service import ParserService
 from app.utils.file_helpers import (
     FileValidationError,
@@ -59,41 +58,7 @@ class UploadService:
 
     @staticmethod
     def _parse_item(db: Session, item: KnowledgeItem) -> tuple[ParseStatus, str | None]:
-        if not item.file_path:
-            return ParseStatus.FAILED, "文件路径缺失"
-
-        file_path = Path(item.file_path)
-        if not file_path.exists():
-            return ParseStatus.FAILED, "文件不存在或已被删除"
-
-        item.status = KnowledgeItemStatus.PROCESSING.value
-        item.processing_progress = 30
-        item.error_message = None
-        db.commit()
-
-        if ParserService.can_parse(str(file_path)):
-            try:
-                content = ParserService.parse_text_file(str(file_path))
-                item.content = content.strip()
-                item.status = KnowledgeItemStatus.READY.value
-                KnowledgeItemService._apply_ready_metadata(item)
-                db.commit()
-                db.refresh(item)
-                return ParseStatus.COMPLETED, None
-            except ValueError as exc:
-                item.status = KnowledgeItemStatus.FAILED.value
-                item.error_message = str(exc)
-                item.processing_progress = 0
-                db.commit()
-                return ParseStatus.FAILED, str(exc)
-
-        message = ParserService.unsupported_message(item.file_type or "")
-        item.status = KnowledgeItemStatus.PENDING.value
-        item.processing_progress = 0
-        item.error_message = message
-        db.commit()
-        db.refresh(item)
-        return ParseStatus.PENDING, message
+        return ParserService.apply_to_item(db, item)
 
     @staticmethod
     async def upload_single_file(

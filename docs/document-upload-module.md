@@ -36,9 +36,9 @@
 1. 校验 KB 存在、文件格式与大小
 2. 写入 `./data/uploads/{kb_id}/{uuid}_{filename}`
 3. 创建 `knowledge_item`（`source_type=file`, `status=pending`）
-4. 若 `auto_parse=true`：调用 `ParserService`
-   - TXT/MD：读文本 → `ready`
-   - PDF/DOCX：保留文件 → `pending` + 提示信息
+4. 若 `auto_parse=true`：调用 `ParserService.apply_to_item`
+   - TXT/MD/PDF/DOCX：解析成功 → `ready`
+   - `.doc` / 解析失败：→ `failed` + `error_message`
 5. 返回 `UploadFileResult` 结构化结果
 
 ### 成功 / 失败 / 部分成功
@@ -122,8 +122,9 @@ Form 字段：`file`/`files`, `category`, `tags`, `auto_parse`
 |------|-----|
 | 多文件 | ✅ 前端队列逐文件上传 |
 | 分片上传 | ❌ 后续 |
-| PDF/Word 解析 | ❌ 先落盘 + pending 提示 |
+| PDF/Word 解析 | ✅ pypdf + python-docx |
 | TXT/MD 解析 | ✅ 同步解析 |
+| 旧版 .doc | ❌ 提示另存为 docx |
 | 状态轮询 | ❌ 同步返回；后续 SSE/轮询 |
 
 ---

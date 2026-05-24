@@ -215,11 +215,28 @@ class KnowledgeItemService:
         return item
 
     @staticmethod
-    def trigger_process(db: Session, item_id: int) -> KnowledgeItem:
-        """Run parse pipeline — text files parse inline; binary formats stay pending with hint."""
+    def parse_item(db: Session, item_id: int) -> KnowledgeItem:
+        """Parse uploaded file and update item content/status."""
         from app.services.parser_service import ParserService
-        from app.services.upload_service import UploadService
 
+        item = KnowledgeItemService.get_item(db, item_id)
+
+        if item.source_type != KnowledgeItemSourceType.FILE.value or not item.file_path:
+            raise InvalidStatusTransitionError(item.status, KnowledgeItemStatus.PROCESSING.value)
+
+        if item.status not in {
+            KnowledgeItemStatus.PENDING.value,
+            KnowledgeItemStatus.FAILED.value,
+        }:
+            raise InvalidStatusTransitionError(item.status, KnowledgeItemStatus.PROCESSING.value)
+
+        ParserService.apply_to_item(db, item)
+        db.refresh(item)
+        return item
+
+    @staticmethod
+    def trigger_process(db: Session, item_id: int) -> KnowledgeItem:
+        """Run parse pipeline for file imports, or mark manual entries ready when content exists."""
         item = KnowledgeItemService.get_item(db, item_id)
 
         if item.status not in {
@@ -229,9 +246,7 @@ class KnowledgeItemService:
             raise InvalidStatusTransitionError(item.status, KnowledgeItemStatus.PROCESSING.value)
 
         if item.source_type == KnowledgeItemSourceType.FILE.value and item.file_path:
-            UploadService._parse_item(db, item)
-            db.refresh(item)
-            return item
+            return KnowledgeItemService.parse_item(db, item_id)
 
         item.status = KnowledgeItemStatus.PROCESSING.value
         item.processing_progress = 50
@@ -243,7 +258,7 @@ class KnowledgeItemService:
             KnowledgeItemService._apply_ready_metadata(item)
         else:
             item.status = KnowledgeItemStatus.FAILED.value
-            item.error_message = ParserService.unsupported_message(item.file_type or "")
+            item.error_message = "条目无正文，请先录入内容或上传文档"
 
         db.commit()
         db.refresh(item)

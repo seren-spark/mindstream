@@ -12,6 +12,8 @@ from app.schemas.knowledge_item import (
     KnowledgeItemStatusUpdate,
     KnowledgeItemUpdate,
 )
+from app.schemas.parse import ParseItemResponse
+from app.schemas.upload import ParseStatus
 from app.services.knowledge_base_service import KnowledgeBaseNotFoundError
 from app.services.knowledge_item_service import (
     InvalidStatusTransitionError,
@@ -136,6 +138,33 @@ def trigger_knowledge_item_process(
     except InvalidStatusTransitionError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return KnowledgeItemResponse.model_validate(item)
+
+
+@router.post("/knowledge-items/{item_id}/parse", response_model=ParseItemResponse)
+def parse_knowledge_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+) -> ParseItemResponse:
+    try:
+        item = KnowledgeItemService.parse_item(db, item_id)
+    except KnowledgeItemNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except InvalidStatusTransitionError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    if item.status == KnowledgeItemStatus.READY.value:
+        parse_status = ParseStatus.COMPLETED
+    elif item.status == KnowledgeItemStatus.FAILED.value:
+        parse_status = ParseStatus.FAILED
+    else:
+        parse_status = ParseStatus.PENDING
+
+    return ParseItemResponse(
+        knowledge_item_id=item.id,
+        parse_status=parse_status.value,
+        item_status=item.status,
+        error_message=item.error_message,
+    )
 
 
 @router.delete("/knowledge-items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
