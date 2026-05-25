@@ -8,7 +8,8 @@
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext .vue,.ts,.tsx --fix",
-    "format": "prettier --write \"src/**/*.{vue,ts,tsx,css,less}\""
+    "format": "prettier --write \"src/**/*.{vue,ts,tsx,css,less}\"",
+    "generate:api-types": "openapi-typescript ../openapi.json -o src/types/generated/api.d.ts"
   },
   "dependencies": {
     "@arco-design/web-vue": "^2.57.0",
@@ -35,6 +36,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.2.11",
     "prettier": "^3.4.2",
+    "openapi-typescript": "^7.6.1",
     "typescript": "~6.0.2",
     "vite": "^8.0.12",
     "vue-tsc": "^3.2.8"

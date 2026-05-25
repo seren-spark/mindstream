@@ -1,4 +1,7 @@
 import type { ChatStreamRequest, StreamEvent } from '@/types/chat'
+import { STREAM_ACCEPT, parseApiError } from '@/types/api'
+import { API_ROUTES } from '@/api/routes'
+import { parseSseEvents } from '@/api/sse'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -10,25 +13,8 @@ export interface StreamChatHandlers {
   onError?: (message: string) => void
 }
 
-function parseSseEvents(buffer: string): { events: StreamEvent[]; rest: string } {
-  const events: StreamEvent[] = []
-  const parts = buffer.split('\n\n')
-  const rest = parts.pop() ?? ''
-
-  for (const part of parts) {
-    const lines = part.split('\n')
-    for (const line of lines) {
-      if (!line.startsWith('data:')) continue
-      const raw = line.slice(5).trim()
-      if (!raw) continue
-      try {
-        events.push(JSON.parse(raw) as StreamEvent)
-      } catch {
-        // 忽略不完整 JSON
-      }
-    }
-  }
-  return { events, rest }
+function parseSseEventsLocal(buffer: string): { events: StreamEvent[]; rest: string } {
+  return parseSseEvents<StreamEvent>(buffer)
 }
 
 export async function streamChat(
@@ -37,16 +23,23 @@ export async function streamChat(
   handlers: StreamChatHandlers,
   signal?: AbortSignal,
 ): Promise<void> {
-  const response = await fetch(`${API_BASE}/knowledge-bases/${knowledgeBaseId}/chat/stream`, {
+  const response = await fetch(`${API_BASE}${API_ROUTES.chat.stream(knowledgeBaseId)}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+    headers: { 'Content-Type': 'application/json', Accept: STREAM_ACCEPT },
     body: JSON.stringify(payload),
     signal,
   })
 
   if (!response.ok) {
-    const text = await response.text().catch(() => '')
-    throw new Error(text || `请求失败 (${response.status})`)
+    let message = `请求失败 (${response.status})`
+    try {
+      const body = await response.json()
+      message = parseApiError({ response: { data: body } }).detail
+    } catch {
+      const text = await response.text().catch(() => '')
+      if (text) message = text
+    }
+    throw new Error(message)
   }
 
   const reader = response.body?.getReader()
@@ -61,7 +54,7 @@ export async function streamChat(
     let readResult = await reader.read()
     while (!readResult.done) {
       buffer += decoder.decode(readResult.value, { stream: true })
-      const { events, rest } = parseSseEvents(buffer)
+      const { events, rest } = parseSseEventsLocal(buffer)
       buffer = rest
 
       for (const event of events) {
@@ -87,7 +80,7 @@ export async function streamChat(
     }
 
     if (buffer.trim()) {
-      const { events } = parseSseEvents(`${buffer}\n\n`)
+      const { events } = parseSseEventsLocal(`${buffer}\n\n`)
       for (const event of events) {
         if (event.type === 'done') handlers.onDone?.()
         if (event.type === 'error') handlers.onError?.(event.message)

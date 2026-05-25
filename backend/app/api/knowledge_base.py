@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
+from app.core.api_errors import not_found
 from app.core.database import get_db
 from app.schemas.common import PaginatedResponse
 from app.schemas.knowledge_base import (
@@ -11,7 +12,7 @@ from app.schemas.knowledge_base import (
 )
 from app.services.knowledge_base_service import KnowledgeBaseNotFoundError, KnowledgeBaseService
 
-router = APIRouter(prefix="/knowledge-bases", tags=["knowledge-bases"])
+router = APIRouter(prefix="/knowledge-bases", tags=["kb"])
 
 
 @router.get("", response_model=PaginatedResponse[KnowledgeBaseResponse])
@@ -59,7 +60,7 @@ def get_knowledge_base(
     try:
         item = KnowledgeBaseService.get_knowledge_base(db, knowledge_base_id)
     except KnowledgeBaseNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        raise not_found(str(exc)) from exc
     return KnowledgeBaseResponse.model_validate(item)
 
 
@@ -72,7 +73,7 @@ def update_knowledge_base(
     try:
         item = KnowledgeBaseService.update_knowledge_base(db, knowledge_base_id, payload)
     except KnowledgeBaseNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        raise not_found(str(exc)) from exc
     return KnowledgeBaseResponse.model_validate(item)
 
 
@@ -84,4 +85,4 @@ def delete_knowledge_base(
     try:
         KnowledgeBaseService.delete_knowledge_base(db, knowledge_base_id)
     except KnowledgeBaseNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        raise not_found(str(exc)) from exc

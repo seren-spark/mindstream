@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -16,9 +17,10 @@ from app.api.prompt import router as prompt_router
 from app.api.retrieval import router as retrieval_router
 from app.api.upload import router as upload_router
 from app.api.vector import router as vector_router
+from app.core.api_contract import OPENAPI_TAGS, ApiErrorCode
 from app.core.config import get_settings
 from app.core.database import init_db
-from app.schemas.common import ErrorResponse
+from app.schemas.common import ErrorResponse, ValidationErrorItem, build_error_content
 
 
 @asynccontextmanager
@@ -34,6 +36,14 @@ app = FastAPI(
     version=settings.app_version,
     debug=settings.debug,
     lifespan=lifespan,
+    openapi_tags=OPENAPI_TAGS,
+    description=(
+        "AI 知识库管理平台 REST API。\n\n"
+        "**契约约定**：成功响应直接返回业务 JSON；"
+        "列表接口返回 `{ items, total, page, page_size }`；"
+        "错误返回 `{ detail, code?, errors? }`；"
+        "流式问答使用 `POST .../chat/stream`，Content-Type 为 `text/event-stream`。"
+    ),
 )
 
 app.add_middleware(
@@ -47,11 +57,30 @@ app.add_middleware(
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
-    if isinstance(exc.detail, str):
-        content = ErrorResponse(detail=exc.detail).model_dump()
+    if isinstance(exc.detail, dict):
+        content = exc.detail
+    elif isinstance(exc.detail, str):
+        content = build_error_content(exc.detail)
     else:
-        content = ErrorResponse(detail="Request failed", code=str(exc.status_code)).model_dump()
+        content = build_error_content("Request failed", code=str(exc.status_code))
     return JSONResponse(status_code=exc.status_code, content=content)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    _: Request,
+    exc: RequestValidationError,
+) -> JSONResponse:
+    errors = [
+        ValidationErrorItem(loc=list(err.get("loc", [])), msg=err.get("msg", ""), type=err.get("type", ""))
+        for err in exc.errors()
+    ]
+    content = ErrorResponse(
+        detail="请求参数校验失败",
+        code=ApiErrorCode.VALIDATION_ERROR,
+        errors=errors,
+    ).model_dump()
+    return JSONResponse(status_code=422, content=content)
 
 
 app.include_router(ping_router, prefix="/api")

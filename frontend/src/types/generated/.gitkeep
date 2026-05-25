@@ -1,0 +1,11 @@
+# OpenAPI 生成的 TypeScript 类型
+
+运行根目录命令生成：
+
+```bash
+npm run openapi:types
+```
+
+产物：`api.d.ts`（由 `openapi-typescript` 从 `openapi.json` 生成）
+
+手动维护的业务类型仍在 `src/types/`；生成类型用于路径/操作级别的补充校验。

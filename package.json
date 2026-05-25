@@ -7,7 +7,9 @@
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:backend": "powershell -NoProfile -Command \"cd backend; .\\.venv\\Scripts\\Activate.ps1; uvicorn app.main:app --reload --host 127.0.0.1 --port 8000\"",
     "lint:frontend": "npm run lint --prefix frontend",
-    "lint:backend": "backend\\.venv\\Scripts\\ruff check backend\\app"
+    "lint:backend": "backend\\.venv\\Scripts\\ruff check backend\\app",
+    "openapi:export": "backend\\.venv\\Scripts\\python backend\\scripts\\export_openapi.py",
+    "openapi:types": "npm run openapi:export && npm run generate:api-types --prefix frontend"
   },
   "devDependencies": {
     "husky": "^9.1.7"

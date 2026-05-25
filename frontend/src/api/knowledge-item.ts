@@ -1,4 +1,6 @@
-import http from './index'
+import http from './client'
+import { API_ROUTES } from './routes'
+import type { PaginatedResult } from '@/types/api'
 import type {
   KnowledgeItem,
   KnowledgeItemCreatePayload,
@@ -6,7 +8,6 @@ import type {
   KnowledgeItemListQuery,
   KnowledgeItemStatusUpdatePayload,
   KnowledgeItemUpdatePayload,
-  PaginatedResult,
 } from '@/types/knowledge-item'
 
 export function fetchKnowledgeItems(knowledgeBaseId: number, params?: KnowledgeItemListQuery) {
@@ -16,31 +17,33 @@ export function fetchKnowledgeItems(knowledgeBaseId: number, params?: KnowledgeI
     source_type: params?.source_type || undefined,
   }
   return http.get<PaginatedResult<KnowledgeItemListItem>>(
-    `/knowledge-bases/${knowledgeBaseId}/items`,
-    { params: query },
+    API_ROUTES.knowledge.items(knowledgeBaseId),
+    {
+      params: query,
+    },
   )
 }
 
 export function fetchKnowledgeItem(itemId: number) {
-  return http.get<KnowledgeItem>(`/knowledge-items/${itemId}`)
+  return http.get<KnowledgeItem>(API_ROUTES.knowledge.item(itemId))
 }
 
 export function createKnowledgeItem(knowledgeBaseId: number, data: KnowledgeItemCreatePayload) {
-  return http.post<KnowledgeItem>(`/knowledge-bases/${knowledgeBaseId}/items`, data)
+  return http.post<KnowledgeItem>(API_ROUTES.knowledge.items(knowledgeBaseId), data)
 }
 
 export function updateKnowledgeItem(itemId: number, data: KnowledgeItemUpdatePayload) {
-  return http.put<KnowledgeItem>(`/knowledge-items/${itemId}`, data)
+  return http.put<KnowledgeItem>(API_ROUTES.knowledge.item(itemId), data)
 }
 
 export function updateKnowledgeItemStatus(itemId: number, data: KnowledgeItemStatusUpdatePayload) {
-  return http.patch<KnowledgeItem>(`/knowledge-items/${itemId}/status`, data)
+  return http.patch<KnowledgeItem>(API_ROUTES.knowledge.itemStatus(itemId), data)
 }
 
 export function triggerKnowledgeItemProcess(itemId: number) {
-  return http.post<KnowledgeItem>(`/knowledge-items/${itemId}/process`)
+  return http.post<KnowledgeItem>(API_ROUTES.knowledge.itemProcess(itemId))
 }
 
 export function deleteKnowledgeItem(itemId: number) {
-  return http.delete<void>(`/knowledge-items/${itemId}`)
+  return http.delete<void>(API_ROUTES.knowledge.item(itemId))
 }
