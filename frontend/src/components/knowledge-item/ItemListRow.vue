@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import ItemStatusTag from '@/components/knowledge-item/ItemStatusTag.vue'
 import type { KnowledgeItemListItem } from '@/types/knowledge-item'
-import { ITEM_SOURCE_MAP } from '@/types/knowledge-item'
+import { ITEM_SOURCE_MAP, ITEM_STATUS_MAP } from '@/types/knowledge-item'
 import { formatRelativeTime } from '@/utils/format'
 
 defineProps<{
@@ -31,7 +31,7 @@ const emit = defineEmits<{
     </div>
 
     <a-progress
-      v-if="item.status === 'processing'"
+      v-if="ITEM_STATUS_MAP[item.status].showProgress"
       :percent="item.processing_progress / 100"
       size="small"
       style="margin-top: 8px"

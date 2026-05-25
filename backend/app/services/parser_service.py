@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.knowledge_item import KnowledgeItem
 from app.parsers.registry import ParserRegistry
 from app.parsers.text_utils import derive_title
+from app.domain.knowledge_item_fsm import PIPELINE_PROGRESS
 from app.schemas.knowledge_item import KnowledgeItemStatus
 from app.schemas.parse import ParseErrorCode, ParseResult
 from app.schemas.upload import ParseStatus
@@ -80,7 +81,7 @@ class ParserService:
             return ParseStatus.PENDING, message
 
         item.status = KnowledgeItemStatus.PROCESSING.value
-        item.processing_progress = 30
+        item.processing_progress = PIPELINE_PROGRESS["parsing"]
         item.error_message = None
         db.commit()
 

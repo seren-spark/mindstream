@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, toRef, watch } from 'vue'
+import { useItemStatusPolling } from '@/composables/useItemStatusPolling'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { Message, Modal } from '@arco-design/web-vue'
 import { IconLeft } from '@arco-design/web-vue/es/icon'
@@ -18,6 +19,18 @@ const itemStore = useKnowledgeItemStore()
 
 const knowledgeBaseId = computed(() => Number(route.params.id))
 const itemIdParam = computed(() => route.params.itemId as string | undefined)
+
+useItemStatusPolling({
+  list: toRef(itemStore, 'list'),
+  current: toRef(itemStore, 'current'),
+  onDetailUpdate: (item) => {
+    itemStore.current = item
+    if (itemStore.selectedId === item.id) {
+      itemStore.populateFormFromCurrent()
+    }
+  },
+  onListSync: (item) => itemStore.syncListItem(item),
+})
 
 async function initPage() {
   if (Number.isNaN(knowledgeBaseId.value)) return

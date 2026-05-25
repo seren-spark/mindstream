@@ -3,41 +3,21 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.domain.knowledge_item_fsm import (
+    ALLOWED_TRANSITIONS,
+    KnowledgeItemStatus,
+)
+
+# 向后兼容：服务层仍可从 schemas 导入转移表
+ALLOWED_STATUS_TRANSITIONS: dict[KnowledgeItemStatus, set[KnowledgeItemStatus]] = {
+    current: set(targets) for current, targets in ALLOWED_TRANSITIONS.items()
+}
+
 
 class KnowledgeItemSourceType(StrEnum):
     MANUAL = "manual"
     FILE = "file"
     AI_GENERATED = "ai_generated"
-
-
-class KnowledgeItemStatus(StrEnum):
-    PENDING = "pending"
-    PROCESSING = "processing"
-    READY = "ready"
-    FAILED = "failed"
-    DISABLED = "disabled"
-
-
-ALLOWED_STATUS_TRANSITIONS: dict[KnowledgeItemStatus, set[KnowledgeItemStatus]] = {
-    KnowledgeItemStatus.PENDING: {
-        KnowledgeItemStatus.PROCESSING,
-        KnowledgeItemStatus.READY,
-        KnowledgeItemStatus.FAILED,
-        KnowledgeItemStatus.DISABLED,
-    },
-    KnowledgeItemStatus.PROCESSING: {
-        KnowledgeItemStatus.READY,
-        KnowledgeItemStatus.FAILED,
-        KnowledgeItemStatus.DISABLED,
-    },
-    KnowledgeItemStatus.READY: {KnowledgeItemStatus.DISABLED, KnowledgeItemStatus.PROCESSING},
-    KnowledgeItemStatus.FAILED: {
-        KnowledgeItemStatus.PENDING,
-        KnowledgeItemStatus.PROCESSING,
-        KnowledgeItemStatus.DISABLED,
-    },
-    KnowledgeItemStatus.DISABLED: {KnowledgeItemStatus.PENDING, KnowledgeItemStatus.READY},
-}
 
 
 class KnowledgeItemCreate(BaseModel):

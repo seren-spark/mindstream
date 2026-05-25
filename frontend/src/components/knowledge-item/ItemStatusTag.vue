@@ -9,10 +9,12 @@ defineProps<{
 </script>
 
 <template>
-  <a-tag :color="ITEM_STATUS_MAP[status].color" size="small">
-    <span v-if="showDot" class="status-dot" />
-    {{ ITEM_STATUS_MAP[status].label }}
-  </a-tag>
+  <a-tooltip :content="ITEM_STATUS_MAP[status].description">
+    <a-tag :color="ITEM_STATUS_MAP[status].color" size="small">
+      <span v-if="showDot" class="status-dot" />
+      {{ ITEM_STATUS_MAP[status].label }}
+    </a-tag>
+  </a-tooltip>
 </template>
 
 <style scoped>

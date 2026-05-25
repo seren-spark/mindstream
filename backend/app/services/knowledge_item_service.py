@@ -1,11 +1,15 @@
 from sqlalchemy.orm import Session
 
 from app.models.knowledge_item import KnowledgeItem
+from app.domain.knowledge_item_fsm import (
+    KnowledgeItemStatus,
+    PIPELINE_PROGRESS,
+    can_transition,
+    is_retryable,
+)
 from app.schemas.knowledge_item import (
-    ALLOWED_STATUS_TRANSITIONS,
     KnowledgeItemCreate,
     KnowledgeItemSourceType,
-    KnowledgeItemStatus,
     KnowledgeItemStatusUpdate,
     KnowledgeItemUpdate,
 )
@@ -106,13 +110,13 @@ class KnowledgeItemService:
     ) -> None:
         if item.content and not item.summary:
             item.summary = item.content.strip()[:200]
-        item.processing_progress = 100
+        item.processing_progress = PIPELINE_PROGRESS["done"]
         item.error_message = None
         if item.content and item.content.strip():
             try:
                 drafts = ChunkService.apply_to_item(db, item, parse_result)
                 db.flush()
-                item.processing_progress = 50
+                item.processing_progress = PIPELINE_PROGRESS["chunking"]
                 db.flush()
                 IndexingService.safe_index_item(db, item, drafts)
                 item.status = KnowledgeItemStatus.READY.value
@@ -211,22 +215,21 @@ class KnowledgeItemService:
         error_message: str | None = None,
     ) -> None:
         current = KnowledgeItemStatus(item.status)
-        allowed = ALLOWED_STATUS_TRANSITIONS.get(current, set())
-        if target not in allowed and current != target:
+        if not can_transition(current, target):
             raise InvalidStatusTransitionError(current.value, target.value)
 
         item.status = target.value
         if target == KnowledgeItemStatus.FAILED:
             item.error_message = error_message or "处理失败"
-            item.processing_progress = 0
+            item.processing_progress = PIPELINE_PROGRESS["queued"]
         elif target == KnowledgeItemStatus.PROCESSING:
-            item.processing_progress = 10
+            item.processing_progress = PIPELINE_PROGRESS["parsing"]
             item.error_message = None
         elif target == KnowledgeItemStatus.READY:
-            item.processing_progress = 100
+            item.processing_progress = PIPELINE_PROGRESS["done"]
             item.error_message = None
         elif target == KnowledgeItemStatus.PENDING:
-            item.processing_progress = 0
+            item.processing_progress = PIPELINE_PROGRESS["queued"]
             item.error_message = None
 
     @staticmethod
@@ -276,17 +279,14 @@ class KnowledgeItemService:
         """Run parse pipeline for file imports, or mark manual entries ready when content exists."""
         item = KnowledgeItemService.get_item(db, item_id)
 
-        if item.status not in {
-            KnowledgeItemStatus.PENDING.value,
-            KnowledgeItemStatus.FAILED.value,
-        }:
+        if not is_retryable(item.status):
             raise InvalidStatusTransitionError(item.status, KnowledgeItemStatus.PROCESSING.value)
 
         if item.source_type == KnowledgeItemSourceType.FILE.value and item.file_path:
             return KnowledgeItemService.parse_item(db, item_id)
 
         item.status = KnowledgeItemStatus.PROCESSING.value
-        item.processing_progress = 50
+        item.processing_progress = PIPELINE_PROGRESS["chunking"]
         item.error_message = None
         db.commit()
 

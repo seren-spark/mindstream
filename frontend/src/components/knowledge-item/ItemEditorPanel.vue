@@ -91,12 +91,12 @@ async function handleRetry() {
         </div>
         <a-space>
           <a-button
-            v-if="store.current && ['pending', 'failed'].includes(store.current.status)"
+            v-if="store.current && ITEM_STATUS_MAP[store.current.status].retryable"
             size="small"
             :loading="store.processLoading"
             @click="store.current && store.triggerProcess(store.current.id)"
           >
-            触发处理
+            {{ store.current.status === 'failed' ? '重新处理' : '触发处理' }}
           </a-button>
           <a-button v-if="store.current?.status === 'failed'" size="small" @click="handleRetry">
             重新处理

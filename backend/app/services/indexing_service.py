@@ -6,9 +6,11 @@ import logging
 
 from sqlalchemy.orm import Session
 
+from app.domain.knowledge_item_fsm import PIPELINE_PROGRESS
 from app.models.knowledge_item import KnowledgeItem
 from app.schemas.chunk import ChunkDraft, ChunkMetadata, SourceLocation
 from app.schemas.embedding import IndexingResult
+from app.schemas.knowledge_item import KnowledgeItemStatus
 from app.services.chunk_service import ChunkService
 from app.services.embedding_service import EmbeddingPipelineError, EmbeddingService
 from app.services.vector_store_service import VectorStoreService
@@ -36,13 +38,13 @@ class IndexingService:
             )
 
         if progress_callback:
-            progress_callback(70)
+            progress_callback(PIPELINE_PROGRESS["embedding_mid"])
 
         inputs = EmbeddingService.build_inputs(drafts, knowledge_item_id=item.id)
         batch_result = EmbeddingService.embed_chunks(inputs)
 
         if progress_callback:
-            progress_callback(85)
+            progress_callback(PIPELINE_PROGRESS["embedding_write"])
 
         record_map = {r.chunk_id: r.vector for r in batch_result.records}
         embeddings = [record_map[d.chunk_id] for d in sorted(drafts, key=lambda x: x.order_index)]
@@ -91,10 +93,9 @@ class IndexingService:
         drafts: list[ChunkDraft],
     ) -> IndexingResult:
         """向量化并写入；失败时清理向量、更新条目为 failed，抛出 EmbeddingPipelineError。"""
-        from app.schemas.knowledge_item import KnowledgeItemStatus
 
         try:
-            item.processing_progress = 60
+            item.processing_progress = PIPELINE_PROGRESS["embedding_start"]
             db.flush()
 
             def on_progress(p: int) -> None:
@@ -102,13 +103,13 @@ class IndexingService:
                 db.flush()
 
             result = IndexingService.index_item(item, drafts, progress_callback=on_progress)
-            item.processing_progress = 100
+            item.processing_progress = PIPELINE_PROGRESS["done"]
             item.error_message = None
             return result
         except EmbeddingPipelineError as exc:
             VectorStoreService.delete_item_vectors(item.knowledge_base_id, item.id)
             item.status = KnowledgeItemStatus.FAILED.value
             item.error_message = str(exc)
-            item.processing_progress = 0
+            item.processing_progress = PIPELINE_PROGRESS["queued"]
             db.flush()
             raise

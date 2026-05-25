@@ -338,6 +338,7 @@ export const useKnowledgeItemStore = defineStore('knowledgeItem', () => {
     remove,
     changeStatus,
     triggerProcess,
+    syncListItem,
     setKeyword,
     setStatusFilter,
     setSourceTypeFilter,
